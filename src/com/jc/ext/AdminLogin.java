@@ -1,0 +1,80 @@
+package com.jc.ext;
+
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.List;
+
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import org.apache.ibatis.session.SqlSession;
+import org.apache.log4j.Logger;
+import org.json.JSONObject;
+
+import com.jc.dao.UserMapper;
+import com.jc.entity.User;
+import com.jc.entity.UserExample;
+import com.jc.util.Coder;
+import com.jc.util.MyBatisUtil;
+
+/**
+ * login
+ * @author qianjia
+ * 2016.6.1
+ */
+@WebServlet("/admin/AdminLogin.ext")
+public class AdminLogin extends HttpServlet{
+
+	private static final long serialVersionUID = -3692170308778424641L;
+	private static Logger logger = Logger.getLogger(AdminLogin.class);
+	@Override
+	protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+		String name = req.getParameter("name");
+		String pwd = req.getParameter("pwd");
+		JSONObject result = new JSONObject();
+		SqlSession session = null;
+		User uiUser=null;
+		session = MyBatisUtil.getSession();
+		UserMapper mapper = session.getMapper(UserMapper.class);
+		UserExample example=new UserExample();
+		example.or().andLoginnameEqualTo(name);
+		List<User> uiUsers = mapper.selectByExample(example);
+		if(uiUsers.size()>0){
+			uiUser=uiUsers.get(0);
+		}
+		session.close();
+		HttpSession httpsession = req.getSession(); 
+		try {
+			pwd=Coder.EncoderByMd5(pwd);
+			if(uiUser!=null&&uiUser.getPassword().equals(pwd)){
+				if(!uiUser.getStatus().equals("0")){
+					result.put("loginstatus", "1");
+					result.put("loginname", uiUser.getLoginname());
+					result.put("maketime", uiUser.getMaketime());
+					result.put("merchantid", uiUser.getMerchantid());
+					result.put("remark", uiUser.getRemark());
+					result.put("userid", uiUser.getUserid());
+					result.put("username", uiUser.getUsername());
+					httpsession.setAttribute("admin", uiUser);
+				}else{
+					result.put("loginstatus", "0");
+					result.put("reason", "商户不可用");
+				}
+			}else{
+				result.put("loginstatus", "0");
+				result.put("reason", "用户名或密码错误");
+				
+			}
+		} catch (Exception e) {
+			logger.info("login err:"+e);
+		}	
+		PrintWriter out = resp.getWriter();
+		out.print(result.toString());
+		out.close();
+	}
+
+}

@@ -1,0 +1,17 @@
+{
+     "button":[
+            {
+               "type":"view",
+               "name":"扫一扫收款",
+               "url":"http://5dadee0f.ngrok.natapp.cn/jsp/logout.html"
+       		}]
+ }
+ =====================
+ {
+     "button":[
+            {
+               "type":"view",
+               "name":"扫一扫收款",
+               "url":"http://wxcard.gold-finance.com.cn/jsp/logout.html"
+       		}]
+ }

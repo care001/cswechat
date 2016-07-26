@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="cn.com.goldfinance.mapper.wkxf.PutMoneyMapper">
+
+	<select id="getGrpPutMoneyByAccHeadPojo" parameterType="cn.com.goldfinance.domain.wkxf.AccHeadPojo" resultType="cn.com.goldfinance.domain.wkxf.PutMoney">
+	select
+	    pos.CardMoneyAfter as cardMoneyAfter,
+	    pos.cardUseNum as cardUseNum
+	  
+	from Pos_putmoney pos
+	 	where pos.empId=#{empId} and pos.secId=#{secId}
+	</select>
+	
+</mapper>

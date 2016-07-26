@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="cn.com.goldfinance.mapper.wkxf.AccHeadMapper">
+
+	<select id="getAccHeadByAccHeadPojo" parameterType="cn.com.goldfinance.domain.wkxf.AccHeadPojo" resultType="cn.com.goldfinance.domain.wkxf.AccHead">
+	select
+	    pos.empId as empId,
+	    pos.secId as secId,
+	    pos.accountno as accountno
+	  
+	from Pos_AccHead pos
+	 	where pos.empId=#{empId} and pos.secId=#{secId}
+	</select>
+	<!-- <select id="getAccHeadByAccHeadPojo2" parameterType="cn.com.goldfinance.domain.coin.AccHeadPojo" resultType="cn.com.goldfinance.domain.coin.AccHead">
+	select
+	    pos.empId as empId,
+	    pos.secId as secId,
+	    pos.CardMoneyAfter as accountno,
+	    pos.cardUseNum as cardUseNum
+	from Pos_inoutmoney pos
+	 	where pos.empId=#{empId} and pos.secId=#{secId}
+	</select> -->
+</mapper>

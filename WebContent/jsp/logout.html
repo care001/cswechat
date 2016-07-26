@@ -1,0 +1,65 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=0">
+    <title>已登录</title>
+    <link rel="stylesheet" href="css/weui.css"/>
+    <link rel="stylesheet" href="css/noCard.css"/>
+    
+</head>
+<body>
+<section style="padding: 15px;font-size: 18px " id="loginform">
+	<p style="margin: 30px 0 0 0;">已登录用户：<em id="username" style="color: #10a6e1; font-weight: bold;"></em></p>
+	<div style="margin: 10px auto 50px auto; width: 100%;">
+        <a style="width: 49%; font-size: 18px !important;" href="javascript:;" class="weui_btn weui_btn_mini weui_btn_primary" id="ok">确认</a>
+        <a style="width: 49%; font-size: 18px !important;" href="javascript:;" class="weui_btn weui_btn_mini weui_btn_default" id="delcookie">注销</a>
+   </div>  
+   <p style="margin: 30px 0 0 0;margin: 50px 0 0 0; border-top: 1px solid #ddd; padding: 20px 0 0 0; font-size: 18px !important; color: #888; text-align: center;">感谢您使用金诚集团无卡消费系统！</p>
+</section>
+
+<script src="js/jquery-1.9.1.min.js"></script>
+<script>
+$(document).ready(function(){
+$("#loginform").hide();
+ $.ajax({ 
+         type: "post", 
+                cache: false, 
+                dataType: 'json',
+                url: "../Login.ext",
+                data:{
+
+                 },
+				success: function(msg) {
+                   if (msg.loginstatus=="1") {
+                       $("#username").html(msg.username);
+                       $("#loginform").show();
+                   } else {
+                       window.location.href = 'login.html';
+                   }
+                }       
+           });
+           
+   $("#ok").click(function(){
+    window.location.href = 'confirmMoney.html';
+   });
+   $("#delcookie").click(function(){
+   $.ajax({ 
+         type: "post", 
+                cache: false, 
+                dataType: 'json',
+                url: "../DelCookie.ext",
+                data:{
+
+                 },
+				success: function(msg) {
+                  window.location.href = 'login.html';
+                }
+   				      
+           });
+    
+   });
+   
+ });
+</script>
+</body>
+</html>

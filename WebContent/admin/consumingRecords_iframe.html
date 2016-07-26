@@ -1,0 +1,262 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"　"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>金诚集团无卡消费后台管理系统</title>
+<link href="css/admin.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="js/jquery-1.9.1.min.js"></script> 
+</head>
+
+<body>
+    <div class="bread">
+      <p class="breadNav">首页&nbsp; &gt; &nbsp;消费记录</p>
+      <p class="lineBread"><img src="images/lineBread.jpg" /></p>
+    </div>
+    <div class="content">
+      <div class="articleList">
+        <div class="search">消费记录查询：
+          <select name="select" id="record_year">
+            <option>2016</option>
+          </select>年
+          <select name="select" id="record_month">
+            <option>1</option>         
+          </select>月
+          <select name="select" id="record_day">
+            <option>1</option>
+          </select>日
+		  <input type="submit" value="查询" class="btnBlue" id="search"/>
+          <div class="groupButtton">
+          	<button type="submit" class="addBtn" id="excel"> 导出Excel</button>            
+          </div>
+        </div>
+        <table width="100%" cellspacing="1" cellpadding="0" border="0">
+          <thead>
+            <tr>
+              <th width="60" class="noLeftBorder">ID</th>
+              <th width="302">消费时间</th>
+              <th width="356">消费账号</th>
+              <th width="280">消费用户</th>
+              <th width="261" class="noRightBorder">消费金额</th>
+              <th width="230">消费钱包</th>
+              <th width="291">消费商户</th>
+            </tr>
+          </thead>
+          <tbody id="histbody">
+            
+          </tbody>
+        </table>
+        <div class="listPage"><a href="javascript:void(0);" id="firstbut">首页</a> <a href="javascript:void(0);" id="upbut">上一页</a> <a href="javascript:void(0);" id="downbut">下一页</a> <a href="javascript:void(0);" id="lastbut">尾页</a>&nbsp;&nbsp;共<span id="pagesum">0</span>条，当前第<span id="pagenow">1</span>/<span id="pageall">1</span>页</div>
+      </div>
+    </div>
+    
+    
+    
+ <script type="text/javascript">
+ $(document).ready(function(){
+ //获取上20年
+ var mydate = new Date();
+ var month=Number(mydate.getMonth());
+ var day=Number(mydate.getDate()); 
+ var year=Number(mydate.getFullYear())-19;
+ jQuery("#record_year").empty();
+ for(var i=0;i<20;i++){
+ 	if(i==19){
+ 		jQuery("#record_year").append("<option value='"+(year+i)+"' selected='selected'>"+(year+i)+"</option>");
+ 	}else{
+ 		jQuery("#record_year").append("<option value='"+(year+i)+"'>"+(year+i)+"</option>");
+ 	}
+ }
+ //设置默认月
+ jQuery("#record_month").empty();
+ for(var i=0;i<12;i++){
+ 	if(i==month){
+ 		jQuery("#record_month").append("<option value='"+(1+i)+"' selected='selected'>"+(1+i)+"</option>");
+ 	}else{
+ 		jQuery("#record_month").append("<option value='"+(1+i)+"'>"+(1+i)+"</option>");
+ 	}
+ }
+$("#record_year").change(function(){
+	$("#record_month").change();
+});
+$("#record_month").change(function(){
+	var monthDays = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];  
+    var yea = $("#record_year").val();  
+    var mon = $("#record_month").val();  
+    var num = monthDays[mon - 1];  
+    if (mon == 2 && isLeapYear(yea)) {  
+        num++;  
+    }
+    jQuery("#record_day").empty(); 
+    jQuery("#record_day").append("<option value='0'>按月查</option>"); 
+    for (var j = 0; j <num; j++) {  
+          jQuery("#record_day").append("<option value='"+(j+1)+"'>"+(j+1)+"</option>");  
+       }   
+
+});
+$("#record_month").change();
+$("#record_day option").each(function(i,n){
+   if($(n).text()==day){
+      $(n).attr("selected",true);
+   }
+});
+  
+       
+// 判断是否闰年  
+function isLeapYear(year)  
+{  
+    return (year % 4 == 0 || (year % 100 == 0 && year % 400 == 0));  
+} 
+
+
+
+ $("#search").click(function(){
+  $.ajax({ 
+         type: "post", 
+                cache: false, 
+                dataType: 'json',
+                url: "GetConHis.ext",
+                data:{
+					seardate:$("#record_year").val()+"-"+$("#record_month").val()+"-"+$("#record_day").val(),
+					pagenumstr:1
+                 },
+				success: function(msg) {
+                   if (msg.consize=='0') {
+                   		$("#histbody").find("tr").remove();
+                      	$("#histbody").append("<tr><td colspan='7'>没有查到数据</td></tr>");
+                      	$("#pagesum").html(msg.pagesum);
+                      	$("#pageall").html(msg.pageall);
+                      	$("#pagenow").html(msg.pagenow);
+                   } else if (msg.consize=='err') {
+                   		alert(msg.desc);
+                      
+                   }else {
+                   		$("#histbody").find("tr").remove();
+                  		for(var i=0;i<msg.consumes.length;i++){
+                  			var walletstr="未知";
+                  			if(msg.consumes[i].wallettype=="7"){
+                  				walletstr="ID金诚币";
+                  			}else if(msg.consumes[i].wallettype=="8"){
+                  				walletstr="ID现金";
+                  			}else if(msg.consumes[i].wallettype=="5"){
+                  				walletstr="IC金诚币";
+                  			}else if(msg.consumes[i].wallettype=="6"){
+                  				walletstr="IC现金";
+                  			}else{
+                  				walletstr="未知";
+                  			}
+                  			$("#histbody").append("<tr><td>"+(i+1)+"</td><td>"+msg.consumes[i].maketime+"</td><td>"+msg.consumes[i].clientid+"</td><td>"+msg.consumes[i].clientname+"</td><td>￥"+msg.consumes[i].cssum+"</td><td>"+walletstr+"</td><td>"+msg.consumes[i].mername+"</td></tr>");
+                   			
+                   		}
+                      	$("#pagesum").html(msg.pagesum);
+                      	$("#pageall").html(msg.pageall);
+                      	$("#pagenow").html(msg.pagenow);
+                   }
+                }       
+           });
+ });
+
+
+
+function post(URL, PARAMS) {
+	var temp = document.createElement("form");
+	temp.action = URL;
+	temp.method = "post";
+	temp.style.display = "none";
+	for (var x in PARAMS) {
+		var opt = document.createElement("textarea");
+		opt.name = x;
+		opt.value = PARAMS[x];
+		temp.appendChild(opt);
+	}
+	document.body.appendChild(temp);
+	temp.submit();
+	}
+
+$("#excel").click(function(){
+	post('BuildExcel.ext', {seardate:$("#record_year").val()+"-"+$("#record_month").val()+"-"+$("#record_day").val()});
+});
+//首页
+$("#firstbut").click(function(){
+	dosearch(1);
+});
+
+//上一页
+$("#upbut").click(function(){
+	var pagenow=$("#pagenow").html();
+	if(pagenow==1){
+		alert("已经是第一页了");
+	}else{
+		dosearch(Number(pagenow)-1);
+	}
+	
+});
+
+//下一页
+$("#downbut").click(function(){
+	var pagenow=$("#pagenow").html();
+	var pageall=$("#pageall").html();
+	if(pagenow==pageall){
+		alert("已经是最后一页了");
+	}else{
+		dosearch(Number(pagenow)+1);
+	}
+});
+
+//尾页
+$("#lastbut").click(function(){
+	var pageall=$("#pageall").html();
+	dosearch(Number(pageall));
+
+});
+
+function dosearch(pagenumstr){
+	
+	$.ajax({ 
+         type: "post", 
+                cache: false, 
+                dataType: 'json',
+                url: "GetConHis.ext",
+                data:{
+					seardate:$("#record_year").val()+"-"+$("#record_month").val()+"-"+$("#record_day").val(),
+					pagenumstr:pagenumstr
+                 },
+				success: function(msg) {
+                   if (msg.consize==0) {
+                   		$("#histbody").find("tr").remove();
+                      	$("#histbody").append("<tr><td colspan='7'>没有查到数据</td></tr>");
+                      	$("#pagesum").html(msg.pagesum);
+                      	$("#pageall").html(msg.pageall);
+                      	$("#pagenow").html(msg.pagenow);
+                   } else if (msg.consize=='err') {
+                   		alert(msg.desc);
+                      
+                   }else {
+                   		$("#histbody").find("tr").remove();
+                  		for(var i=0;i<msg.consumes.length;i++){
+                  			var walletstr="未知";
+                  			if(msg.consumes[i].wallettype=="7"){
+                  				walletstr="ID金诚币";
+                  			}else if(msg.consumes[i].wallettype=="8"){
+                  				walletstr="ID现金";
+                  			}else if(msg.consumes[i].wallettype=="5"){
+                  				walletstr="IC金诚币";
+                  			}else if(msg.consumes[i].wallettype=="6"){
+                  				walletstr="IC现金";
+                  			}else{
+                  				walletstr="未知";
+                  			}
+                   			$("#histbody").append("<tr><td>"+(i+1)+"</td><td>"+msg.consumes[i].maketime+"</td><td>"+msg.consumes[i].clientid+"</td><td>"+msg.consumes[i].clientname+"</td><td>￥"+msg.consumes[i].cssum+"</td><td>"+walletstr+"</td><td>"+msg.consumes[i].mername+"</td></tr>");
+                   			
+                   		}
+                      	$("#pagesum").html(msg.pagesum);
+                      	$("#pageall").html(msg.pageall);
+                      	$("#pagenow").html(msg.pagenow);
+                   }
+                }       
+           });
+}
+ });
+</script>
+</body>
+
+</html>

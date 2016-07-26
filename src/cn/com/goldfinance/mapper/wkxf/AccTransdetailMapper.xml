@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="cn.com.goldfinance.mapper.wkxf.AccTransdetailMapper">
+
+	<select id="getAccTransdetailByEmpId" parameterType="string" resultType="cn.com.goldfinance.domain.wkxf.AccTransdetail">
+	select
+	    pos.Cardid as cardid,
+	    pos.Empid as empid,
+	    pos.Secid as secid,
+	    CONVERT(varchar(100), pos.Acctransday, 20)
+	     as acctransday,
+	    pos.Acctransseq as acctransseq,
+	    pos.Acctranstype as acctranstype,
+	    pos.Imoneyvalue as imoneyvalue,
+	    pos.Omoneyvalue as omoneyvalue,
+	    pos.Cardusenum as cardusenum,
+	    pos.devId as devId,
+	    pos.Cardmoneyvalue as cardmoneyvalue
+	from Pos_AccTransdetail pos
+	 	where pos.empId=#{empId}
+	</select>
+	<select id="getAccTransdetailByCoinPojo" parameterType="cn.com.goldfinance.domain.wkxf.CoinPojo" resultType="cn.com.goldfinance.domain.wkxf.AccTransdetail">
+	
+	<![CDATA[ 
+	select
+	    pos.Cardid as cardid,
+	    pos.Empid as empid,
+	    pos.Secid as secid,
+	    CONVERT(varchar(100), pos.Acctransday, 20)
+	     as acctransday,
+	    pos.Acctransseq as acctransseq,
+	    pos.Acctranstype as acctranstype,
+	    pos.Imoneyvalue as imoneyvalue,
+	    pos.Omoneyvalue as omoneyvalue,
+	    pos.Cardusenum as cardusenum,
+	     pos.devId as devId,
+	    pos.Cardmoneyvalue as cardmoneyvalue
+	from Pos_AccTransdetail pos
+	 	where (pos.empId=#{empId} and pos.devId<>999 and pos.Acctransday >=#{startTime} and pos.Acctransday <=#{endTime})
+	 	or (pos.empId=#{empId} and pos.devId is null and pos.Acctransday >=#{startTime} and pos.Acctransday <=#{endTime})
+	 	 order by pos.Acctransday desc
+	]]>
+	</select>
+</mapper>

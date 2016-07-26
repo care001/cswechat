@@ -1,0 +1,56 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"　"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>金诚集团无卡消费后台管理系统</title>
+<link href="css/admin.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="js/jquery-1.9.1.min.js"></script>
+<script type="text/javascript">  
+
+
+$(function(){
+
+	$.ajax({ 
+         type: "post", 
+                cache: false, 
+                dataType: 'json',
+                url: "LeftSys.ext",
+                data:{
+					
+                 },
+				success: function(msg) {
+                   if (msg.merchants.length>0) {
+                   	for(var i=0;i<msg.merchants.length;i++){
+                   		$("#menuul").append("<li><a href='UserList.ext?merchantid="+msg.merchants[i].merchantid+"' target='mainFrame'>"+msg.merchants[i].mername+"</a></li>");
+                   	}
+                   		
+                   } else {
+                   		
+                   }
+                   $(document).ready(function(){  
+   						$(".menu li").each(function(){  
+        				$(this).click(function(){  
+            			$(".menu .current").removeClass("current");  
+           				$(this).addClass("current");    
+        			});  
+    			});
+    			}); 
+                }       
+           }); 
+}); 
+</script> 
+<style type="text/css">
+body {background:#213246;}
+</style>
+</head>
+
+<body>
+<div class="mainLeft">
+  <div class="menu">
+    <ul id="menuul">
+	 <li class="current"><a href="UserList.ext?merchantid=-1" target='mainFrame'>管理员</a></li> 
+    </ul>
+  </div>
+</div>
+</body>
+</html>

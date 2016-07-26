@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="cn.com.goldfinance.mapper.wkxf.HrmsEmpMapper">
+
+	
+	<select id="getMaxCardIDByEmpNo" parameterType="java.lang.String" resultType="java.lang.Integer">
+	SELECT MAX(CardID) from Hrms_Emp emp,Com_EmpCard card where emp.EmpID=card.EmpID and emp.EmpNo=#{empno}
+	
+	</select>
+	<select id="getEmpNameByEmpNo" parameterType="java.lang.String" resultType="java.lang.String">
+	SELECT EmpName from Hrms_Emp where EmpNo=#{empno}
+	
+	</select>
+	
+	
+	
+</mapper>

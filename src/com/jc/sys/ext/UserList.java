@@ -1,0 +1,82 @@
+package com.jc.sys.ext;
+
+import java.io.IOException;
+import java.util.List;
+
+import javax.servlet.RequestDispatcher;
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.ibatis.session.SqlSession;
+import org.apache.log4j.Logger;
+
+import com.jc.dao.UserMapper;
+import com.jc.entity.User;
+import com.jc.entity.UserExample;
+import com.jc.util.MyBatisUtil;
+
+/**
+ * 
+ * @author qianjia
+ * 2015.6.5
+ */
+@WebServlet("/sys/UserList.ext")
+public class UserList extends HttpServlet{
+
+	private static final long serialVersionUID = -3692170308778424641L;
+	private static Logger logger = Logger.getLogger(UserList.class);
+	private static final int PAGESIZE=10;
+
+	@Override
+	protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+		String merchantstr=req.getParameter("merchantid");
+		String pagenostr = req.getParameter("pageno");
+		int pageno=1;
+		if(pagenostr!=null&&!pagenostr.equals("")){
+			pageno=Integer.valueOf(pagenostr).intValue();
+		}
+		int merchantid=Integer.valueOf(merchantstr);
+		SqlSession session = MyBatisUtil.getSession();
+		UserMapper mapper = session.getMapper(UserMapper.class);
+		UserExample example=new UserExample();
+		example.or().andMerchantidEqualTo(merchantid);
+		int count=mapper.countByExample(example);
+		example.clear();
+		example.or().andMerchantidEqualTo(merchantid);
+		example.setLimitSize(PAGESIZE);
+		example.setLimitStart((pageno-1)*PAGESIZE);
+		List<User> users=mapper.selectByExample(example);
+		if(merchantid>0){
+			logger.info("商户");
+		}
+		session.close();
+		
+		RequestDispatcher rd = req.getRequestDispatcher("admin_iframe.jsp");
+		req.setAttribute("merchantid", merchantid);
+	    req.setAttribute("users", users);
+	    req.setAttribute("pageno", pageno);
+	    req.setAttribute("usersize", users.size());
+	    if(count%PAGESIZE==0){
+	    	if(count/PAGESIZE==0){
+		    	req.setAttribute("pageall", 1);
+			}else{
+				req.setAttribute("pageall", count/PAGESIZE);
+			}
+		}else{
+			req.setAttribute("pageall", count/PAGESIZE+1);
+		}
+	    
+	    req.setAttribute("pagesum", count);
+	    rd.forward(req,resp);
+	}
+	@Override
+	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+		doPost(req, resp);
+	}
+
+	
+
+}

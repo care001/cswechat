@@ -1,0 +1,35 @@
+*{ margin: 0; padding: 0;}
+html{ font-size: 62.5%;}
+body{ font-family: "微软雅黑"; background:#f0f0f2 !important;  }
+div{ display: block;}
+em,p,ul,dl,dt,dd,ins,h1,h2,h3,h4,form,h1,h2,h3,h4,ins{margin:0;padding:0;font-size:12px}
+ins{text-decoration:none;}
+em{font-style:normal;}
+ul,ol{ list-style:none;}
+input,select{ vertical-align:middle;}
+input,button,select,textarea{outline:none} 
+textarea{resize:none}
+img{border:0; vertical-align: middle;}
+a{text-decoration:none;outline:none; color: #333;}
+
+/*.head{ height: 4rem; line-height: 4rem; background: #f8f8f8; position: fixed; top:0; left: 0; width: 100%; z-index: 1000; border-bottom: .1rem solid #bcbcbc;}
+.head h1{ text-align: center; font-size: 1.6rem; color: #111111;}
+.head .back{ position: absolute; top:0; left:1rem; width:2rem; height: 4rem; cursor: pointer; display: block; background: url(../img/iconfont-iconfontxiangyou.png) center center no-repeat; background-size:2.5rem auto;}*/
+.am-form{ position: relative;  position:fixed; top:0; left: 0;  width: 100%; background: #f0f0f2; z-index: 999;}
+.select-box select{ background: #fff; padding:0 .8rem; border-radius: .8rem; font-size: 1.6rem; border: .1rem solid #bbb; height:3rem;}
+.select-box select.select-month{ position: absolute; top:.5rem; left:10.5rem ; width:7.5rem;}
+.select-box select:first-child{ position: absolute; top:.5rem; left:.5rem; width:9.5rem;}
+.weui_btn.weui_btn_mini.y-btn-select{ padding: 0 2rem;height:3rem; line-height: 3rem;left:22rem; border-radius: .8rem;font-size: 1.6rem;top:.5rem}
+.table-count{ width: 100%; position: absolute; top:4rem;}
+.table-count .tab{ background: #fff;}
+.table-count .tab th{ border: .1rem solid #BCBCBC; padding: .5rem 0; font-size: 1.6rem; font-weight: normal;}
+.table-count tr td{ border-bottom: #BCBCBC solid .1rem; padding:.8rem 0; font-size: 1.4rem; text-align: center; color: #000;}
+.table-count tr td span{ margin-left: .5rem;}
+.y-datatime{height: 3rem; position: absolute; top:.5rem; width: 15rem; left:.5rem; font-size: 1.6rem; background-color:#fff; border: .1rem solid #bbb;  padding-left: .5rem; color: #333;}
+ .weui_cell.y-cellbox{ border:.1rem solid #BCBAB6; font-size: 1.6rem; width:20rem; background: #fff; padding: 0; height:3rem; line-height:3rem; position: absolute; top:.5rem; left: .3rem;}
+ .weui_cell.y-cellbox .weui_label{ width: auto; height:3rem; line-height:3rem;  padding-left: .3rem; margin-right: 1rem;}
+ .weui_cell.y-cellbox .weui_input{ height:3rem; line-height:3rem; background:url(../img/iconfont-1.png) 98% 50% no-repeat;}
+@media screen and (min-width: 768px) {
+header,section{width:320px; margin:0 auto; }
+ html{ font-size:62.5%;}
+}

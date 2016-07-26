@@ -1,0 +1,119 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=0">
+    <title>无卡消费</title>
+    <link rel="stylesheet" href="css/weui.css"/>
+    <link rel="stylesheet" href="css/noCard.css"/>
+    <style>
+   		#errorInfo{margin-left:10px}
+   	</style>
+</head>
+<body>
+<section class="login">
+	<div class="logo"></div>
+    <form id="loginForm" name="loginForm" method="post" action="">
+    	<p id="errorInfo"></p>
+	    <div class="weui_cells weui_cells_form">
+		        <div class="weui_cell">
+		            <div class="weui_cell_hd"><label class="weui_label">账 号</label></div>
+		            <div class="weui_cell_bd weui_cell_primary">
+		                	<input name="user" class="weui_input" type="text" placeholder="商户账号" id="name"/>
+		            </div>
+		        </div> 
+		        <div class="weui_cell">
+		            <div class="weui_cell_hd"><label class="weui_label">密 码</label></div>
+		            <div class="weui_cell_bd weui_cell_primary">
+		                <input name="pwd" class="weui_input" type="password" placeholder="请输入登录密码" id="pwd"/>
+		            </div>
+		        </div>    
+	    </div>
+	    <a class="forgetPwd" href="findPwd.html">忘记密码？</a>
+		<div class="btnWrap">
+		    <input type="submit" value="立即登录" class="weui_btn weui_btn_primary">
+		</div> 
+    </form>
+</section>
+<div class="weui_dialog_alert" id="dialog">
+   <div class="weui_mask"></div>
+   <div class="weui_dialog">
+       <div class="weui_dialog_hd"><strong class="weui_dialog_title">登录失败</strong></div>
+       <div class="weui_dialog_bd" id="dialogmsg">未知错误</div>
+       <div class="weui_dialog_ft">
+           <a href="#" class="weui_btn_dialog primary" id="diaclose">确定</a>
+       </div>
+   </div>
+</div>
+<script src="js/jquery-1.9.1.min.js"></script>
+<script src="js/jquery.validate.js"></script>
+<script type="text/javascript">
+$(function() {
+
+$("#dialog").hide();
+$("#diaclose").click(function(){
+	$("#dialog").hide();
+});
+
+	
+	validator=$("#loginForm").validate({		
+	    rules: {
+		    user:{
+			    required:true
+		  	},
+		    pwd:{
+			    required:true
+		  	}
+	    },	    
+	    messages: {
+		    user:{
+			    required: "请填写商户账号！"
+		  	},
+		    pwd:{
+			    required: "请填写登录密码！"
+		  	}
+	    },
+	    groups:{
+	    	
+	    	loginForm:"user pwd"
+	    },
+	    submitHandler:function(form) {
+		 $.ajax({ 
+         type: "post", 
+                cache: false, 
+                dataType: 'json',
+                url: "../Login.ext",
+                data:{
+					name:$("#name").val(),
+					pwd:$("#pwd").val()
+                 },
+				success: function(msg) {
+                   if (msg.loginstatus=="1") {
+                       	//alert("登陆成功");
+                        window.location.href = 'confirmMoney.html';
+                   } else {
+                  	 	$("#dialogmsg").html(msg.reason);
+                   		$("#dialog").show();
+                       	//alert(msg.reason);
+                   }
+                },
+                err:function(XMLHttpRequest, textStatus, errorThrown){
+                	$("#dialogmsg").html("网络错误。。");
+                   	$("#dialog").show();
+                }       
+           });
+		},
+		errorPlacement: function(error, element) {
+		 	error.appendTo( "#errorInfo");
+		}
+	});
+	
+	$(".weui_btn weui_btn_primary").click(function(){
+	if($(".weui_input").val()==""){
+		$(".weui_input").focus();
+	}
+	});
+
+});
+</script>
+</body>
+</html>

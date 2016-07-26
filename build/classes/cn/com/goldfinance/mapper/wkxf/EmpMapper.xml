@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="cn.com.goldfinance.mapper.wkxf.EmpMapper">
+
+	
+	<select id="getEmpByEmpNo" parameterType="string" resultType="cn.com.goldfinance.domain.wkxf.Emp">
+	
+	select
+	    emp.empname as empName,
+	    emp.empid as empId,
+	    emp.empno as empNo
+	from Hrms_Emp emp
+	 	where emp.empno=#{empNo}
+	</select>
+</mapper>

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration
+  PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+	<!-- 读取数据库信息 -->
+	<properties resource="config/jdbc.properties"></properties>
+	<typeAliases>
+		<!-- 设置类包路径 -->
+		<package name="com.tom.entity"/>
+	</typeAliases>
+  <environments default="development">
+    <environment id="development">
+      <transactionManager type="JDBC"/>
+      <dataSource type="POOLED">
+        <property name="driver" value="${wkxf.driverClass}"/>
+        <property name="url" value="${wkxf.jdbcUrl}"/>
+        <property name="username" value="${wkxf.user}"/>
+        <property name="password" value="${wkxf.password}"/>
+        <property name="poolMaximumActiveConnections" value="${wkxf.poolMaximumActiveConnections}"/>
+        <property name="poolMaximumIdleConnections" value="${wkxf.poolMaximumIdleConnections}"/>
+        <property name="poolTimeToWait" value="5000" />
+	    <property name="poolPingEnabled" value="true"/>
+	    <property name="poolPingQuery" value="select 1 " />
+      </dataSource>
+    </environment>
+  </environments>
+  <mappers>
+    <mapper resource="cn/com/goldfinance/mapper/wkxf/HrmsEmpMapper.xml" />
+    <mapper resource="cn/com/goldfinance/mapper/wkxf/AccTransdetailMapper.xml" />
+    <mapper resource="cn/com/goldfinance/mapper/wkxf/AccHeadMapper.xml" />
+    <mapper resource="cn/com/goldfinance/mapper/wkxf/DevMapper.xml" />
+    <mapper resource="cn/com/goldfinance/mapper/wkxf/EmpMapper.xml" />
+    <mapper resource="cn/com/goldfinance/mapper/wkxf/GrpPutMoneyMapper.xml" />
+    <mapper resource="cn/com/goldfinance/mapper/wkxf/PutMoneyMapper.xml" />
+  </mappers>
+</configuration>

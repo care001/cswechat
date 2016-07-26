@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="cn.com.goldfinance.mapper.wkxf.GrpPutMoneyMapper">
+
+	<select id="getGrpPutMoneyByAccountno" parameterType="string" resultType="cn.com.goldfinance.domain.wkxf.GrpPutMoney">
+	select
+	    pos.accountno as accountno,
+	    pos.planPutMoneyValue as planPutMoneyValue,
+	     pos.actPutMoneyValue as actPutMoneyValue,
+	    pos.cardUseNum as cardUseNum
+	  
+	from Pos_GrpPutMoneyList pos
+	 	where pos.accountno=#{accountno}
+	</select>
+	
+</mapper>

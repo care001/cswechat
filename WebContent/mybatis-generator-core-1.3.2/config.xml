@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>  
+<!DOCTYPE generatorConfiguration  
+  PUBLIC "-//mybatis.org//DTD MyBatis Generator Configuration 1.0//EN"  
+  "http://mybatis.org/dtd/mybatis-generator-config_1_0.dtd">
+
+<generatorConfiguration>
+
+	<!-- properties引入失败，似乎不支持相对路径 -->
+	<!-- <properties resource="../src/main/resources/jdbc.properties" /> -->
+	
+	<classPathEntry location="ojdbc6.jar" />
+	<classPathEntry location="mysql-connector-java-5.1.8-bin.jar" />
+	
+	<context id="selfserverTables" targetRuntime="MyBatis3">	
+		<commentGenerator>
+			<property name="suppressDate" value="true" /><!-- 是否生成注释代时间戳 -->
+		</commentGenerator>
+
+		
+			<!-- <jdbcConnection driverClass="oracle.jdbc.driver.OracleDriver"
+			connectionURL="jdbc:oracle:thin:@10.20.1.23/ilisdev" userId="workflow"
+			password="workflow"> -->
+			<jdbcConnection driverClass="com.mysql.jdbc.Driver"
+			connectionURL="jdbc:mysql://10.0.21.18:3306/jcwechat" userId="root"
+			password="111111">
+		</jdbcConnection> 
+		<!-- <jdbcConnection driverClass="${jdbc.driverClassName}"
+			connectionURL="${jdbc.url}" userId="${jdbc.username}"
+			password="${jdbc.password}">
+		</jdbcConnection> -->
+
+		<javaTypeResolver>
+			<property name="forceBigDecimals" value="false" />
+		</javaTypeResolver>
+
+		<javaModelGenerator targetPackage="com.jc.entity"
+			targetProject="../../src">
+			<property name="enableSubPackages" value="true" />
+			<property name="trimStrings" value="true" />
+		</javaModelGenerator>
+
+		<sqlMapGenerator targetPackage="com.jc.dao"
+			targetProject="../../src">
+			<property name="enableSubPackages" value="true" />
+		</sqlMapGenerator>
+
+		<javaClientGenerator type="XMLMAPPER"
+			targetPackage="com.jc.dao" targetProject="../../src">
+			<property name="enableSubPackages" value="true" />
+		</javaClientGenerator>
+
+		<!-- <table tableName="AGETNT_ACT_LOG" domainObjectName="AgetntActLog" />
+		<table tableName="CONFIG_INFO" domainObjectName="ConfigInfo" />
+		<table tableName="IMPART_GROUP_INFO" domainObjectName="ImpartGroupInfo" />-->
+		<table tableName="cs_confail" domainObjectName="ConFail" />	
+
+	</context>
+	
+</generatorConfiguration>
