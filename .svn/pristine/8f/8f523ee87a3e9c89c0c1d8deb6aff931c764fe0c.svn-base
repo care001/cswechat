@@ -1,0 +1,319 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"　"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>金诚集团无卡消费后台管理系统</title>
+<link href="css/admin.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="../js/jquery-1.9.1.min.js"></script> 
+<style>
+span{font-size:14px;}
+#dialog { height:290px;}
+#name{margin-left:65px}
+#addbutton{margin-left:75px;}
+td{margin-top:50px}
+#err{color:#FF0000;font-size:14px;margin-left:50px}
+</style>
+</head>
+
+<body>
+    <div class="bread">
+      <p class="breadNav">首页&nbsp; &gt; &nbsp;机构码管理</p>
+      <p class="lineBread"><img src="../images/lineBread.jpg" /></p>
+    </div>
+    <div class="content">
+      <div class="articleList">
+	   <div class="search">
+          <div class="groupButtton">
+          	<button type="submit" class="addBtn">添加机构码</button>            
+          </div>
+        </div>
+        <table width="100%" cellspacing="1" cellpadding="0" border="0">
+          <thead>
+            <tr>
+              <th width="600" class="noLeftBorder">机构</th>
+              <th width="600" class="noRightBorder">机构码</th>	
+			  <th width="280"></th>  
+            </tr>
+          </thead>
+          <tbody id="hisbody">
+                 
+          </tbody>
+        </table>
+        <div class="listPage">
+			<a href="javascript:void(0);" id="firstbut">首页</a> 
+			<a href="javascript:void(0);" id="upbut">上一页</a> 
+			<a href="javascript:void(0);" id="downbut">下一页</a> 
+			<a href="javascript:void(0);" id="lastbut">尾页</a>&nbsp;&nbsp;
+			共<span id="pagesum">0</span>条，当前第<span id="pagenow">1</span>/<span id="pageall">1</span>页</div>
+      </div>
+      </div>
+
+<div id="fullbg"></div>
+<div id="dialog"> 
+     <img class="delete" src="../images/iconDelete.png"/>	 
+<div class="dialogcon">
+			<div id="errorInfo"></div>
+			<div id="name">机构:&nbsp;&nbsp;<input type="text" name="fname" id="name1" placeholder="请输入机构"/><em id="nameerr"></em></div>
+			<div id="fnum">机构码:&nbsp;&nbsp;<input type="text" name="fnum" id="fnum1" value="" placeholder="请输入机构码"/><em id="fnumerr"></em></div>		
+</div>
+<span id="err"></span>
+	<div><input type="button" value="添加" id="addbutton"/></div>
+	
+</div>
+ 
+<script>
+		function check(){
+			$("#err").text("");
+                    //验证机构
+       				if( $("#name1").val()==""){
+						$("#err").text("机构不能为空");
+						return false;						
+                    }else if($("#name1").val().length>30){
+						$("#err").text("机构长度不能超过30");
+						return false;	
+					}else{
+						$("#err").text("");
+					}
+	                //验证机构码
+                    if( $("#fnum1").val()==""){
+                      $("#err").text("机构码不能为空");
+					   return false;				
+                    }else if($("#fnum1").val().length>10){
+						$("#err").text("机构码长度不能超过10");
+						return false;
+					}else{
+						$("#err").text("");
+						return true;
+					} 
+			}
+
+         $('#addbutton').click(function(){
+		    if(check()){
+			//alert($("#name1").val());
+			//alert($("#fnum1").val());
+				 $("#fullbg,#dialog").hide();//关闭罩层
+		           //提交数据
+ 					$.ajax({ 
+						        type: "post", 
+								dataType: 'json',
+								url: "../manage/AddAgency.ext",
+								data:{
+									name:$("#name1").val(),
+									code:$("#fnum1").val()
+								 },
+								
+								success: function(data){
+								//alert(JSON.stringify(data));
+								  if(data.flag){
+										alert(data.desc);
+										
+								   }else {
+									
+								   }
+								},
+                error: function(data){
+                    alert("网络错误或未登陆,请重新登录");
+                }       
+          			 });
+			  }else{
+			  
+			  }
+		   
+        });
+		
+		
+		     //获取提交数据
+			 $(document).ready(function(){
+			 
+			 			$.ajax({
+									type: "post", 
+									cache: false, 
+									dataType: 'json',
+									url: "../manage/ShowAgency.ext",
+									success: function(data) {
+									//alert(JSON.stringify(data));
+											if (data.agentsum==0){
+														$("#hisbody tr").remove();
+														$("#hisbody").append("<tr><td colspan='3'>没有查到数据</td></tr>");
+														$("#pagesum").html(data.agentsum);
+														$("#pageall").html(data.pageall);
+														$("#pagenow").html(data.pagenow);
+											}else if(data.agentsum!==0){
+											
+												 for(var i=0;i<data.agencies.length;i++){
+														var name=data.agencies[i].agency;
+														var id=data.agencies[i].id;
+														var code=data.agencies[i].agencyno;
+														var num=i+1;
+					
+														var $tr=$("<tr></tr>");
+														$tr.attr('id','num');
+														var $td1=$("<td>"+name+"</td>");
+														var $td2=$("<td>"+code+"</td>");
+														var $td3=$("<td></td>");
+														var $a = $("<a onclick='confirm('确定要重置密码吗?')mydel("+id+",this)' ></a>");
+														$a.attr('href','#');
+														$a.text("删除");
+														
+														$td3.append($a);
+														$tr.append($td1);
+														$tr.append($td2);
+														$tr.append($td3);
+														
+														$("#hisbody").append($tr);
+														$("#pagesum").html(data.agentsum);
+														$("#pageall").html(data.pageall);
+														$("#pagenow").html(data.pagenow);
+												}
+										}
+				                   },
+                error: function(data){
+                    alert("网络错误或未登陆,请重新登录");
+                }
+					  });
+			 });
+			
+							
+			 
+			
+			
+				//删除数据
+			
+			function mydel(id,obj){
+					var thisObj=$(obj);
+					var $trElement = thisObj.parent().parent();
+					var $name = $trElement.children().eq(0).text();
+					var flag = confirm("你确认要删除"+$name+"这个用户吗？");
+					if(flag){
+						$.ajax({ 
+						        type: "post", 
+								dataType: 'json',
+								url: "../manage/DelAgency.ext",
+								data:{
+									agencyid:id
+								 },
+								
+								success: function(data){
+								  if(data.flag){
+										$trElement.remove();
+								   }else {
+										alert(data.desc);
+								   }
+								},
+                			error: function(data){
+                    			alert("网络错误或未登陆,请重新登录");
+                			}              
+          			 });
+					 return false;
+					}
+				 
+				}
+ 
+//显示灰色 jQuery 遮罩层 
+$(".addBtn").click(function(){
+	    var bh = window.screen.height; 
+		var bw = window.screen.width; 
+		$("#fullbg").css({ 
+		height:bh, 
+		width:bw, 
+		display:"block" 
+		}); 
+		$("#name1").val("");
+		$("#fnum1").val("");
+		$("#err").text("");
+		$("#dialog").show(); 
+});
+//关闭灰色罩层
+$(".delete").click(function(){
+	$("#fullbg,#dialog").hide();
+});
+
+
+function dosearch(page){
+				 $.ajax({
+									type: "post", 
+									cache: false, 
+									dataType: 'json',
+									url: "../manage/ShowAgency.ext",
+									 data:{
+										"pagenumstr":page
+									 },
+									success: function(data) {
+									//alert(JSON.stringify(data));
+											if (data.agentsum==0){
+														$("#hisbody tr").remove();
+														$("#hisbody").append("<tr><td colspan='3'>没有查到数据</td></tr>");
+														$("#pagesum").html(data.agentsum);
+														$("#pageall").html(data.pageall);
+														$("#pagenow").html(data.pagenow);
+											}else if(data.agentsum!==0){
+											$("#hisbody tr").remove();
+												 for(var i=0;i<data.agencies.length;i++){
+														var name=data.agencies[i].agency;
+														var id=data.agencies[i].id;
+														var code=data.agencies[i].agencyno;
+														var num=i+1;
+					
+														var $tr=$("<tr></tr>");
+														$tr.attr('id','num');
+														var $td1=$("<td>"+name+"</td>");
+														var $td2=$("<td>"+code+"</td>");
+														var $td3=$("<td></td>");
+														var $a = $("<a onclick='mydel("+id+",this)' ></a>");
+														$a.attr('href','#');
+														$a.text("删除");
+														
+														$td3.append($a);
+														$tr.append($td1);
+														$tr.append($td2);
+														$tr.append($td3);
+														
+														$("#hisbody").append($tr);
+														$("#pagesum").html(data.agentsum);
+														$("#pageall").html(data.pageall);
+														$("#pagenow").html(data.pagenow);
+												}
+										}
+				                   },
+                error: function(data){
+                    alert("网络错误或未登陆,请重新登录");
+                }
+					  });
+}
+//首页
+$("#firstbut").click(function(){
+	dosearch(1);
+});
+
+//上一页
+$("#upbut").click(function(){
+	var pagenow=$("#pagenow").html();
+	if(pagenow==1){
+		alert("已经是第一页了");
+	}else{
+		dosearch(Number(pagenow)-1);
+	}
+	
+});
+
+//下一页
+$("#downbut").click(function(){
+	var pagenow=$("#pagenow").html();
+	var pageall=$("#pageall").html();
+	if(pagenow==pageall){
+		alert("已经是最后一页了");
+	}else{
+		dosearch(Number(pagenow)+1);
+	}
+});
+
+//尾页
+$("#lastbut").click(function(){
+	var pageall=$("#pageall").html();
+	dosearch(Number(pageall));
+
+});
+
+</script>
+</body>
+</html>

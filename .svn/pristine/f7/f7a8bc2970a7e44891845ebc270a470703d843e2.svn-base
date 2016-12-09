@@ -1,0 +1,10 @@
+package com.jc.mybatis.mapper;
+
+import java.util.List;
+
+import com.jc.mybatis.domain.Power;
+
+public interface PowerMapper {
+	public List<Power> getAllPower();
+
+}

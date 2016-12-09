@@ -1,0 +1,288 @@
+package com.jc.ext;
+
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import org.apache.ibatis.session.SqlSession;
+import org.apache.log4j.Logger;
+import org.json.JSONObject;
+
+import cn.com.goldfinance.domain.wkxf.AccTransdetail;
+import cn.com.goldfinance.mapper.wkxf.AccTransdetailMapper;
+
+import com.jc.mybatis.domain.Config;
+import com.jc.mybatis.domain.ConfigExample;
+import com.jc.mybatis.domain.Consume;
+import com.jc.mybatis.domain.User;
+import com.jc.mybatis.mapper.ConfigMapper;
+import com.jc.mybatis.mapper.UserMapper;
+import com.jc.util.Coder;
+import com.jc.util.MyBatisUtil;
+import com.jc.util.PowerDataOperUtil;
+
+/**
+ * 消费记录查询
+ * @author qianjia
+ * 2016.6.5
+ */
+@WebServlet("/admin/GetConHis.ext")
+public class GetConHis extends HttpServlet{
+
+	private static final long serialVersionUID = -3692170308778424641L;
+	private static Logger logger = Logger.getLogger(GetConHis.class);
+	private static final int PAGESIZE=10;
+	
+	@Override
+	protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+		String startdate = req.getParameter("startdate");
+		String enddate = req.getParameter("enddate");
+		String pagenumstr = req.getParameter("pagenumstr");
+		String userid=req.getParameter("userid");
+		String merchantid=req.getParameter("merchantid");
+		String cardsel = req.getParameter("cardsel");
+		HttpSession httpSession=req.getSession();
+		User user=(User)httpSession.getAttribute("admin");
+		JSONObject result = null;
+		if(cardsel.equals("IC")){
+			result=getICHis(user, userid, merchantid, startdate, enddate, pagenumstr);//ic记录查询
+		}else{
+			result=getIDHis(user, userid, merchantid, startdate, enddate, pagenumstr);//id记录查询
+		}
+		
+		PrintWriter out = resp.getWriter();
+		out.print(result.toString());
+		out.close();
+	}
+	
+	/**IC历史记录查询*/
+	public JSONObject getICHis(User user,String userid,String merchantid,String startdate,String enddate,String pagenumstr){
+		JSONObject result = new JSONObject();
+		int pagenum=1;
+		if(pagenumstr==null||!Coder.isNumeric(pagenumstr)){
+			pagenumstr="1";
+		}else{
+			pagenum=Integer.parseInt(pagenumstr);
+		}
+		if(user==null||user.getUserid()<=0){
+			try {
+				result.put("desc", "您还没有登陆");
+				result.put("consize", "err");
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			
+			logger.info("请登陆。。");
+		}else{
+			SqlSession session=MyBatisUtil.getSession();
+			SqlSession session2 = MyBatisUtil.getwkxfSession();
+			Map<String, Object> sermap=new HashMap<String, Object>();
+			int conssum=0;
+			List<AccTransdetail> list =null;
+			try {
+				ConfigMapper configMapper=session.getMapper(ConfigMapper.class);
+				AccTransdetailMapper accTransdetailMapper = session2.getMapper(AccTransdetailMapper.class);
+				UserMapper userMapper=session.getMapper(UserMapper.class);
+				ConfigExample configExample=new ConfigExample();
+				Map<String, User> map = new HashMap<String, User>();
+				
+				if(user.getStatus().equals("1")||user.getStatus().equals("99")){
+					configExample.or().andValueEqualTo(String.valueOf(user.getUserid()));
+					List<Config> configs=configMapper.selectByExample(configExample);
+					if(Coder.isListNotEmpty(configs)){
+						List<Integer> devIds=new ArrayList<Integer>();
+						for (int i = 0; i < configs.size(); i++) {
+							String nameString=configs.get(i).getName();
+							if(Coder.isNumeric(nameString)){
+								devIds.add(Integer.parseInt(nameString));
+							}
+							sermap.put("devIds", devIds);
+						}
+					}//条件消费机 机号
+					if(startdate!=null&&startdate!=""){
+						sermap.put("startTime", Coder.formatStartDay(startdate));
+					}//起日期
+					if(enddate!=null&&enddate!=""){
+						sermap.put("endTime", Coder.formatEndDay(enddate));
+					}//止日期
+					conssum=accTransdetailMapper.getAccTransdetailCountByMap(sermap);
+					sermap.put("limitstart", (pagenum-1)*PAGESIZE);
+					sermap.put("limitsize", PAGESIZE);
+					list = accTransdetailMapper
+							.getAccTransdetailByMap(sermap);//C3消费记录
+					
+				}else if(user.getStatus().equals("2")){
+					com.jc.mybatis.domain.ConfigExample.Criteria criteria=configExample.createCriteria();
+					if(Coder.isNumeric(userid)){
+						criteria.andValueEqualTo(userid);
+					}
+					criteria.andReservesEqualTo(String.valueOf(user.getMerchantid()));
+					List<Config> configs=configMapper.selectByExample(configExample);
+					if(Coder.isListNotEmpty(configs)){
+						List<Integer> devIds=new ArrayList<Integer>();
+						for (int i = 0; i < configs.size(); i++) {
+							String nameString=configs.get(i).getName();
+							if(Coder.isNumeric(nameString)){
+								devIds.add(Integer.parseInt(nameString));
+							}
+							sermap.put("devIds", devIds);
+						}
+					}//条件消费机 机号
+					if(startdate!=null&&startdate!=""){
+						sermap.put("startTime", Coder.formatStartDay(startdate));
+					}//起日期
+					if(enddate!=null&&enddate!=""){
+						sermap.put("endTime", Coder.formatEndDay(enddate));
+					}//止日期
+					conssum=accTransdetailMapper.getAccTransdetailCountByMap(sermap);
+					sermap.put("limitstart", (pagenum-1)*PAGESIZE);
+					sermap.put("limitsize", PAGESIZE);
+					list = accTransdetailMapper
+							.getAccTransdetailByMap(sermap);//C3消费记录
+				}else if(user.getStatus().equals("3")||user.getStatus().equals("4")){
+					com.jc.mybatis.domain.ConfigExample.Criteria criteria=configExample.createCriteria();
+					if(Coder.isNumeric(userid)){
+						criteria.andValueEqualTo(userid);
+					}
+					if(Coder.isNumeric(merchantid)){
+						criteria.andReservesEqualTo(merchantid);
+					}
+					List<Config> configs=configMapper.selectByExample(configExample);
+					if(Coder.isListNotEmpty(configs)){
+						List<Integer> devIds=new ArrayList<Integer>();
+						for (int i = 0; i < configs.size(); i++) {
+							String nameString=configs.get(i).getName();
+							if(Coder.isNumeric(nameString)){
+								devIds.add(Integer.parseInt(nameString));
+							}
+							sermap.put("devIds", devIds);
+						}
+					}//条件消费机 机号
+					if(startdate!=null&&startdate!=""){
+						sermap.put("startTime", Coder.formatStartDay(startdate));
+					}//起日期
+					if(enddate!=null&&enddate!=""){
+						sermap.put("endTime", Coder.formatEndDay(enddate));
+					}//止日期
+					conssum=accTransdetailMapper.getAccTransdetailCountByMap(sermap);
+					sermap.put("limitstart", (pagenum-1)*PAGESIZE);
+					sermap.put("limitsize", PAGESIZE);
+					list = accTransdetailMapper
+							.getAccTransdetailByMap(sermap);//C3消费记录
+				}
+				configExample.createCriteria().andStatusEqualTo("ICMER");
+				List<Config> li=configMapper.selectByExample(configExample);
+				for(Config config:li){
+					User cuser=null;
+					if(config.getValue()!=null&&Coder.isNumeric(config.getValue())){
+						cuser=userMapper.selectByPrimaryKey(Integer.parseInt(config.getValue()));
+					}
+					if(cuser!=null){
+						map.put(config.getName(), cuser);
+					}
+					
+				}
+				List<Consume> consumes=new ArrayList<Consume>();
+				if(Coder.isListNotEmpty(list)){
+					for (AccTransdetail accTransdetail : list) {
+						Consume consume=new Consume();
+						User user2=map.get(accTransdetail.getDevId());
+						consume.setMerchantid(user2.getMerchantid());
+						consume.setCsmerchat(user2.getUsername());
+						consume.setMername(user2.getMername());
+						consume.setUserid(user2.getUserid());
+						consume.setCsstatus("1");
+						consume.setClientid(accTransdetail.getEmpNo());
+						consume.setCssum(Double.valueOf(accTransdetail.getAmount()));
+						consume.setMaketime(accTransdetail.getAcctransday());
+						consume.setPushflag("400");
+						consume.setRemark(accTransdetail.getRemark()==null?"":accTransdetail.getRemark());
+						consume.setWallettype(accTransdetail.getSecId());//金诚币消费 
+						consume.setClientname(accTransdetail.getEmpName());
+						consumes.add(consume);
+					}
+					
+				}
+				
+				result.put("consumes", consumes);
+				result.put("pagesum", conssum);
+				if(conssum%PAGESIZE==0){
+					if(conssum/PAGESIZE==0){
+						result.put("pageall", 1);
+					}else{
+						result.put("pageall", conssum/PAGESIZE);
+					}
+				}else{
+					result.put("pageall", (conssum/PAGESIZE)+1);
+				}
+				result.put("pagenow", pagenumstr);  
+			} catch (Exception e) {
+				logger.info(e);
+			}finally{
+				session.close();
+				session2.close();
+			}
+		}
+		return result;
+	}
+	/**ID历史记录查询*/
+	public JSONObject getIDHis(User user,String userid,String merchantid,String startdate,String enddate,String pagenumstr){
+		JSONObject result = new JSONObject();
+		int pagenum=1;
+		if(pagenumstr==null||!Coder.isNumeric(pagenumstr)){
+			pagenumstr="1";
+		}else{
+			pagenum=Integer.parseInt(pagenumstr);
+		}
+		if(user==null||user.getUserid()<=0){
+			try {
+				result.put("desc", "您还没有登陆");
+				result.put("consize", "err");
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			
+			logger.info("请登陆。。");
+		}else{
+			try {
+				Map<String, Object> map=new HashMap<String, Object>();
+				//按权限设值
+				
+				if(user.getStatus().equals("1")||user.getStatus().equals("99")){
+					map.put("userid", user.getUserid());
+					map.put("Merchantid", user.getMerchantid());
+				}else if(user.getStatus().equals("2")){
+					map.put("userid", userid);
+					map.put("Merchantid", user.getMerchantid());
+				}else if(user.getStatus().equals("3")||user.getStatus().equals("4")){
+					map.put("userid", userid);
+					map.put("Merchantid", merchantid);
+				}
+ 
+				map.put("seardate1", Coder.formatStartDay(startdate));
+				map.put("seardate2", Coder.formatEndDay(enddate));
+				map.put("pagestart", (pagenum-1)*PAGESIZE);
+				map.put("pagesize", PAGESIZE);
+				Map<String,Object> retmap=PowerDataOperUtil.getHisByPower(map, user.getStatus());
+				result.put("consumes", (List<Consume>)retmap.get("consumes"));
+				result.put("pagesum", retmap.get("pagesum"));
+				result.put("pageall", retmap.get("pageall"));
+				result.put("pagenow", pagenumstr);  
+			} catch (Exception e) {
+				logger.info(e);
+			}
+		}
+		return result;
+	}
+
+}

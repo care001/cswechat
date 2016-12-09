@@ -14,4 +14,13 @@
 	from Hrms_Emp emp
 	 	where emp.empno=#{empNo}
 	</select>
+	<select id="getEmpByEmpId" parameterType="java.lang.Integer" resultType="cn.com.goldfinance.domain.wkxf.Emp">
+	SELECT 
+		emp.empname as empName,
+	    emp.empid as empId,
+	    emp.empno as empNo 
+	    from Hrms_Emp emp 
+	    where EmpId=#{empid}
+	
+	</select>
 </mapper>

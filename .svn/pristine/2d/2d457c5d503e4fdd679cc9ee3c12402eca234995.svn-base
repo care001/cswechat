@@ -1,0 +1,561 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"　"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Cache-Control" content="no-cache"/>
+
+<meta name="format-detection" content="telphone=yes, email=yes" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>金诚集团无卡消费后台管理系统</title>
+<link href="css/admin.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="../js/jquery-1.9.1.min.js"></script> 
+</head>
+<style>
+#err{color:#FF0000;font-size:14px;margin-left:50px}
+#selid{width:109px;margin-left:-4px}
+</style>
+<body>
+<input type="hidden" id="merchantid" value="" />
+    <div class="bread">
+      <p class="breadNav">首页&nbsp; &gt; &nbsp;管理员信息</p>
+      <p class="lineBread"><img src="../images/lineBread.jpg" /></p>
+    </div>
+    <div class="content">
+      <div class="articleList">
+	   <div class="search">
+          <div class="groupButtton">
+          	<button type="submit" class="addBtn">添加</button>            
+          </div>
+        </div>
+        <table width="100%" cellspacing="1" cellpadding="0" border="0">
+          <thead>
+            <tr>
+              <th width="15%" class="noLeftBorder">名称</th>
+              <th width="10%">类型</th>
+              <th width="10%">账号</th>
+              <th width="10%" class="noRightBorder">密码</th>
+			  <th width="10%">联系人</th>
+			  <th width="15%">联系人电话</th>
+			  <th width="25%">联系人地址</th>
+			  <th width="5%"></th>
+            </tr>
+          </thead>
+          <tbody id="tabshow">
+
+			
+                 
+          </tbody>
+        </table>
+        <div class="listPage">
+        <a href="javascript:void(0);" onClick="changePage(0);">首页</a> 
+        <a href="javascript:void(0);" onClick="changePage(1);">上一页</a> 
+        <a href="javascript:void(0);" onClick="changePage(2);">下一页</a> 
+        <a href="javascript:void(0);" onClick="changePage(3);">尾页</a>
+        &nbsp;&nbsp;共<span id="usersize">0</span>条，当前第<span id="pagenow">1</span>/<span id="pageall">1</span>页</div>
+      </div>
+    </div>
+<div id="fullbg"></div>
+<div id="dialog"> 
+     <img class="delete" src="../images/iconDelete.png">
+	<div class="dialogcon">
+				
+				<div id="name">名称:&nbsp;&nbsp;<input class="inputclass" type="text" name="fname" id="name1" placeholder="请输入名称"/></div>
+				<div id="type1">类型:&nbsp;&nbsp;
+				<select id="selid">
+					<option value="0">请选择</option>
+					<option value="3">管理员</option>
+					<option value="2">商户账号</option>
+					<option value="1">消费点</option>
+					<option value="SH">商户</option>
+				</select>
+				
+				<select id="subselid">
+					<option>请选择</option>
+				</select>
+				</div>
+				
+				<div id="fnum">账号:&nbsp;&nbsp;<input class="inputclass" type="text" name="fnum" id="fnum1" value="" placeholder="请输入账号"/><br/>	
+					密码:&nbsp;&nbsp;<input class="inputclass" type="password" name="psw" id="password" value="" placeholder="请输入密码"/></div>
+				<div id="bank">姓名:&nbsp;&nbsp;<input class="inputclass" type="text" name="bank1" id="contact" value="" placeholder="请输入联系人姓名"/><br/>
+							   电话:&nbsp;&nbsp;<input class="inputclass" type="text" name="bank2" id="phone" value="" placeholder="请输入联系人电话"/><br/>
+							   地址:&nbsp;&nbsp;<input class="inputclass" type="text" name="bank3" id="address" value="" placeholder="请输入地址"/></div>
+	</div>
+	<span id="err"></span>
+	<div style="height:120px;"><input type="button" value="添加" id="addbutton"/></div>
+	
+</div> 
+</body>
+<script>
+function checkfour(){
+	if($("#name1").val().length>30){
+		$("#err").text("名称长度不能超过30");
+		return false;
+	}else{
+		$("#err").text("");
+	}
+	var reg=/^[a-z0-9]+$/;
+	 if(reg.test($("#fnum1").val())){
+		if($("#fnum1").val().length>25){
+		$("#err").text("账号长度不能超过25");
+			return false;
+		}else{
+			$("#err").text("");
+		}
+	}else{
+		$("#err").text("账号只能输入小写英文和数字");
+		return false;
+	}
+	if($("#password").val().length>25){
+		$("#err").text("密码长度不能超过25");
+		return false;
+	}else{
+		$("#err").text("");
+		return true;
+	}
+}
+function checktwo(){
+	if($("#name1").val().length>30){
+		$("#err").text("名称长度不能超过30");
+		return false;
+	}else{
+		$("#err").text("");
+	}
+	if($("#contact").val().length>30){
+		$("#err").text("联系人长度不能超过30");
+		return false;
+	}else{
+		$("#err").text("");
+	}
+	if($("#phone").val().length>25){
+		$("#err").text("电话号码长度不能超过30");
+		return false;
+	}else{
+		$("#err").text("");
+	}
+	if($("#address").val().length>25){
+		$("#err").text("地址长度不能超过30");
+		return false;
+	}else{
+		$("#err").text("");
+		return true;
+	}
+}
+function checkthree(){
+	if(checktwo()){
+		var reg=/^[a-z0-9]+$/;
+		if(reg.test($("#fnum1").val())){
+			if($("#fnum1").val().length>25){
+				$("#err").text("账号长度不能超过25");
+				return false;
+			}else{
+				$("#err").text("");
+			}
+		}else{
+			$("#err").text("账号只能输入小写英文和数字");
+			return false;
+		}
+		if($("#password").val().length>25){
+			$("#err").text("密码长度不能超过25");
+			return false;
+		}else{
+			$("#err").text("");
+			return true;
+		}
+	}else{
+	}
+}
+
+
+
+//查询账号信息请求
+$(function(){
+	var url=window.location .href;
+	var aa=url.indexOf("=");
+	if (aa == -1){
+		url="";
+	}else{
+		url=url.substring(aa+1);
+	}
+	$("#merchantid").val(url);
+	 $.ajax({ 
+         type: "post", 
+                cache: false, 
+                dataType: 'json',
+                url: "UserListByMerId.ext",
+                data:{
+					"merchantid":url
+					
+                 },
+				success: function(msg) {
+                   if (msg.usersize=='0') {
+                   		$("#tabshow").find("tr").remove();
+                      	$("#tabshow").append("<tr><td colspan='8'>没有查到数据</td></tr>");
+                      	$("#usersize").html(msg.usersize);
+                      	$("#pageall").html(msg.pageall);
+                      	$("#pagenow").html(msg.pagenow);
+                   } else if (msg.consize=='err') {
+                   		alert(msg.desc);
+                      
+                   }else {
+                   		$("#tabshow").find("tr").remove();
+                  		for(var i=0;i<msg.users.length;i++){
+                  			var status="未知";
+                  			if(msg.users[i].status=="1"){
+                  				status="消费点账号";
+                  			}else if(msg.users[i].status=="2"){
+                  				status="商户账号";
+                  			}else if(msg.users[i].status=="3"){
+                  				status="一般管理员";
+                  			}else if(msg.users[i].status=="4"){
+                  				status="运营管理员";
+                  			}else if(msg.users[i].status=="5"){
+                  				status="系统管理员";
+                  			}else if(msg.users[i].status=="99"){
+                  				status="线上消费点账号";
+                  			}else{
+                  				status="未知";
+                  			}
+							var delurl="";
+							if(msg.users[i].status!="5"){
+								delurl="<a href='javascript:void(0);' onclick='doDel("+msg.users[i].userid+",this)'>删除</a>";
+							}
+							var contact=$("#contact").val();
+							if(msg.users[i].contact!=null){
+								contact=msg.users[i].contact;
+							}
+							var phone=$("#phone").val();
+							if(msg.users[i].phone!=null){
+								phone=msg.users[i].phone;
+							}
+							var address=$("#address").val();
+							if(msg.users[i].address!=null){
+								address=msg.users[i].address;
+							}
+                  			$("#tabshow").append("<tr id='"+msg.users[i].userid+"'><td>"+msg.users[i].username+"</td><td>"+status+"</td><td>"+msg.users[i].loginname+"</td><td><button onclick='doReset("+msg.users[i].userid+")'>重置</button></td><td>"+contact+"</td><td>"+phone+"</td><td>"+address+"</td><td>"+delurl+"</td></tr>");
+                   			
+                   		}
+                      	$("#usersize").html(msg.usersize);
+                      	$("#pageall").html(msg.pageall);
+                      	$("#pagenow").html(msg.pagenow);
+                   }
+                },
+                error: function(data){
+                    alert("网络错误或未登陆,请重新登录");
+                }       
+           });
+		   
+});
+
+//分页请求
+function postpage(merid,pageno){
+$.ajax({ 
+         type: "post", 
+                cache: false, 
+                dataType: 'json',
+                url: "UserListByMerId.ext",
+                data:{
+					"merchantid":merid,
+					"pageno":pageno
+					
+                 },
+				success: function(msg) {
+                   if (msg.usersize=='0') {
+                   		$("#tabshow").find("tr").remove();
+                      	$("#tabshow").append("<tr><td colspan='8'>没有查到数据</td></tr>");
+                      	$("#usersize").html(msg.usersize);
+                      	$("#pageall").html(msg.pageall);
+                      	$("#pagenow").html(msg.pagenow);
+                   } else if (msg.consize=='err') {
+                   		alert(msg.desc);
+                      
+                   }else {
+                   		$("#tabshow").find("tr").remove();
+                  		for(var i=0;i<msg.users.length;i++){
+                  			var status="未知";
+                  			if(msg.users[i].status=="1"){
+                  				status="消费点账号";
+                  			}else if(msg.users[i].status=="2"){
+                  				status="商户账号";
+                  			}else if(msg.users[i].status=="3"){
+                  				status="一般管理员";
+                  			}else if(msg.users[i].status=="4"){
+                  				status="运营管理员";
+                  			}else if(msg.users[i].status=="5"){
+                  				status="系统管理员";
+                  			}else if(msg.users[i].status=="99"){
+                  				status="线上消费点账号";
+                  			}else{
+                  				status="未知";
+                  			}
+							var delurl="";
+							if(msg.users[i].status!="5"){
+								delurl="<a href='javascript:void(0);' onclick='doDel("+msg.users[i].userid+",this)'>删除</a>";
+							}
+							var contact=$("#contact").val();
+							if(msg.users[i].contact!=null){
+								contact=msg.users[i].contact;
+							}
+							var phone=$("#phone").val();
+							if(msg.users[i].phone!=null){
+								phone=msg.users[i].phone;
+							}
+							var address=$("#address").val();
+							if(msg.users[i].address!=null){
+								address=msg.users[i].address;
+							}
+                  			$("#tabshow").append("<tr id='"+msg.users[i].userid+"'><td>"+msg.users[i].username+"</td><td>"+status+"</td><td>"+msg.users[i].loginname+"</td><td><button onclick='doReset("+msg.users[i].userid+")'>重置</button></td><td>"+contact+"</td><td>"+phone+"</td><td>"+address+"</td><td>"+delurl+"</td></tr>");
+                   			
+                   		}
+                      	$("#usersize").html(msg.usersize);
+                      	$("#pageall").html(msg.pageall);
+                      	$("#pagenow").html(msg.pagenow);
+                   }
+                },
+                error: function(data){
+                    alert("网络错误或未登陆,请重新登录");
+                }       
+           });
+}
+
+
+ $("#addbutton").click(function(){
+	   var addtype= $.trim($("#selid").val());
+       var username=$.trim($("#name1").val());
+       var loginname=$.trim($("#fnum1").val());
+       var password=$.trim($("#password").val());
+       var merchantid=$.trim($("#subselid").val());
+       var contact=$.trim($("#contact").val());
+       var phone=$.trim($("#phone").val());
+       var address=$.trim($("#address").val());
+       if(addtype==3){
+       		addtype=$("#subselid").val();
+       	}
+     	//验证通过后提交执行添加操作
+       if(checkNull(addtype)){
+       	$.ajax({ 
+         type: "post", 
+                cache: false, 
+                dataType: 'json',
+                url: "AddUser.ext",
+                data:{
+					addtype:addtype,
+					username:username,
+					loginname:loginname,
+					password:password,
+					merchantid:merchantid,
+					contact:contact,
+					phone:phone,
+					address:address
+                 },
+				success: function(msg) {
+                   if (msg.flag) {
+ 						alert("添加成功");
+ 						$(".delete").click();
+                   } else {
+                   		alert(msg.desc);
+                   }
+                },
+                error: function(data){
+                    alert("网络错误或未登陆,请重新登录");
+                }       
+           });
+       }else if(addtype==0){
+       	alert("请选择添加类型");
+       }else{
+       	//alert("请填写完整");
+       }
+       
+      //根据添加角色进行验证
+       function checkNull(addtype){
+      
+      	 $(".err").hide();
+       	if(addtype==1||addtype==2||addtype==3){
+       		return checkone($("#name1"))&&checkone($("#fnum1"))&&checkone($("#password"))&&checkone($("#subselid"))&&checkone($("#contact"))&&checkone($("#phone"))&&checkone($("#address"))&&checkthree();
+       	}else if(addtype==4){
+       		return checkone($("#name1"))&&checkone($("#fnum1"))&&checkone($("#password"))&&checkone($("#subselid"))&&checkfour();
+       	}else if(addtype=='SH'){
+       		return checkone($("#name1"))&&checkone($("#contact"))&&checkone($("#phone"))&&checkone($("#address"))&&checktwo();
+       	}else{
+       		return false;
+       	}
+       	
+       }
+       //验证value是否为空
+       function checkone(one){
+       $(".err").hide();
+       	if($.trim(one.val())==""){
+       		one.after('<span class="err" style="color:red;font-size:10px;">该项不能为空</span>');
+       		return false;
+       	}
+       	return true;
+       }
+});
+//重置
+function doReset(userid){
+  if(confirm('确定要重置密码吗?')){
+  	$.ajax({ 
+        type: "post", 
+        cache: false, 
+        dataType: 'json',
+        url: "UpdateUser.ext",
+        data:{
+			"userid":userid
+         },
+		success: function(msg) {
+        	alert(msg.desc);
+        },
+        error: function(data){
+        	alert("网络错误或未登陆,请重新登录");
+        }       
+     });
+  
+  }
+	
+}
+//删除
+function doDel(userid,obj){
+	var thisObj=$(obj);
+	var $trElement = thisObj.parent().parent();
+	var $name = $trElement.children().eq(0).text();
+	var flag = confirm("你确认要删除"+$name+"这个用户吗？");
+	if(flag){
+		$.ajax({ 
+			type: "post", 
+            cache: false, 
+            dataType: 'json',
+            url: "DelUser.ext",
+            data:{
+				"userid":userid
+            },
+			success: function(msg) {
+            	if(msg.flag){
+            		$trElement.remove();
+            	}else{
+            		alert(msg.desc);
+            	}
+            },
+        	error: function(data){
+        		alert("网络错误或未登陆,请重新登录");
+        	}        
+		});
+		
+		return false;
+	}else{
+		return false;
+	}
+}
+//显示灰色 jQuery 遮罩层 
+$(".addBtn").click(function(){
+		$("#selid").change();
+	    var bh = window.screen.height; 
+		var bw = window.screen.width; 
+		$("#fullbg").css({ 
+		height:bh, 
+		width:bw, 
+		display:"block",
+		});
+		$(".inputclass").val("");
+		$("#err").text("");
+		var kk = document.getElementById("selid").options;
+		kk[0].selected=true; 
+		$("#selid").change();
+		$("#dialog").show();
+		
+		//changeCity();
+});
+//关闭灰色罩层
+$(".delete").click(function(){
+	$("#fullbg,#dialog").hide();
+});
+
+function changePage(type){
+	var merid=$("#merchantid").val();
+	var pageno=$("#pagenow").html();
+	var pagesize=$("#pageall").html();
+	if(type=="0"){
+		if(pageno==1){
+			alert("已经是首页了");
+		}else{
+		postpage(merid,1);
+		}
+		
+	}else if(type=="1"){
+		var nowpage=Number(pageno)-1;
+		if(nowpage>=1){
+			postpage(merid,nowpage);
+		}else{
+			alert("已经是第一页了");
+		}
+		
+	}else if(type=="2"){
+		var nowpage=Number(pageno)+1;
+		if(nowpage<=pagesize){
+			postpage(merid,nowpage);
+		}else{
+			alert("已经是最后一页了");
+		}
+		
+	}else if(type=="3"){
+		if(pageno==pagesize){
+			alert("已经是尾页了");
+		}else{
+			postpage(merid,pagesize);
+		}
+		
+	}
+}	
+//下拉框二级菜单显示
+$(function(){
+	$("#subselid").hide();
+	$("#selid").change(function(){
+	$(".inputclass").val("");
+		var selid=$("#selid").val();
+		$("#bank").hide();
+		$("#subselid").hide();
+		if(selid==1||selid==2){//
+			$("#fnum").show();
+			$("#subselid").show();
+			$("#bank").show();
+
+			$.ajax({ 
+         		type: "post", 
+                cache: false, 
+                dataType: 'json',
+                url: "LeftSys.ext",
+                data:{
+					},
+				success: function(msg) {
+					jQuery("#subselid").empty();
+                   if (msg.merchants.length>0) {
+                   	for(var i=0;i<msg.merchants.length;i++){
+                   		 jQuery("#subselid").append("<option value='"+(msg.merchants[i].merchantid)+"'>"+msg.merchants[i].mername+"</option>");
+                   	} 
+                   }
+                },
+                error: function(data){
+                    alert("网络错误或未登陆,请重新登录");
+                }       
+           }); 
+		}else if(selid==3){		
+			$("#fnum").show();
+			$("#subselid").show();
+			$("#bank").show();
+			jQuery("#subselid").empty();
+			jQuery("#subselid").append("<option value='3'>一般管理员</option>");
+			jQuery("#subselid").append("<option value='4'>运营管理员</option>");
+		}else if(selid=='SH'){
+			$("#fnum").hide();
+			$("#subselid").hide();
+			$("#bank").show();
+			jQuery("#subselid").empty();
+		}else{
+			$("#fnum").show();
+			}
+		
+	});
+	
+});
+
+
+</script>
+</html>

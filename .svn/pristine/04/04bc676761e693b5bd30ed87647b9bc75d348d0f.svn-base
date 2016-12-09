@@ -1,0 +1,42 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"　"http://www.w3.org/TR/html4/loose.dtd">
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=0">
+    <title>跳出密码框</title>
+    <link rel="stylesheet" href="css/weui.css"/>
+    <link rel="stylesheet" href="css/noCard.css"/>
+</head>
+<body onLoad="Polling()">
+<section class="findPwd">
+    <p class="tel">账号和密码问题请联系客服电话：<span>0571-88335639</span></p>
+    <p class="tanksText">感谢您使用金诚集团无卡消费系统！</p>
+</section>
+<script src="../js/jquery-1.9.1.min.js"></script>
+
+<script>
+	function wantEnter() { 
+    	$.ajax({ 
+                type: "post", 
+                dataType: 'json',
+                url: "../WantEnterPwd.ext",
+                data:{
+					"empno":"0002621"
+                 },
+	           success: function(msg){
+			   		if(msg.flag){
+			   			alert(msg.consume.csmerchat+":"+msg.consume.cssum);
+			   		}
+			   },
+                error: function(data){
+                    alert("网络错误");
+                }
+		  }); 
+	} 
+function Polling(){ 
+    wantEnter(); 
+    setInterval("wantEnter()", 3000); 
+} 
+</script> 
+</body>
+</html>

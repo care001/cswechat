@@ -1,0 +1,42 @@
+package com.jc.ext;
+
+import java.io.IOException;
+import java.io.PrintWriter;
+
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+/**
+ * 
+ * @author qianjia
+ * 2016.6.5
+ */
+@WebServlet("/admin/Loginout.ext")
+public class Loginout extends HttpServlet{
+
+	private static final long serialVersionUID = -3692170308778424641L;
+	
+	
+	@Override
+	protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+		JSONObject result = new JSONObject();
+		HttpSession httpSession=req.getSession();
+		httpSession.setAttribute("admin", null);
+		try {
+			result.put("flag", true);
+		} catch (JSONException e) {
+			e.printStackTrace();
+		}
+		PrintWriter out = resp.getWriter();
+		out.print(result.toString());
+		out.close();
+	}
+
+}

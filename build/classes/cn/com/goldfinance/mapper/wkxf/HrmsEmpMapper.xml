@@ -6,7 +6,7 @@
 
 	
 	<select id="getMaxCardIDByEmpNo" parameterType="java.lang.String" resultType="java.lang.Integer">
-	SELECT MAX(CardID) from Hrms_Emp emp,Com_EmpCard card where emp.EmpID=card.EmpID and emp.EmpNo=#{empno}
+	SELECT MAX(CardID) from Hrms_Emp emp,Com_EmpCard card where emp.EmpID=card.EmpID and emp.EmpNo=#{empno} and card.CardStatusID=20
 	
 	</select>
 	<select id="getEmpNameByEmpNo" parameterType="java.lang.String" resultType="java.lang.String">
@@ -14,6 +14,9 @@
 	
 	</select>
 	
+	<select id="getMaxCardIDOnlyByEmpNo" parameterType="java.lang.String" resultType="java.lang.Integer">
+	SELECT MAX(CardID) from Hrms_Emp emp,Com_EmpCard card where emp.EmpID=card.EmpID and emp.EmpNo=#{empno}
 	
+	</select>
 	
 </mapper>

@@ -1,0 +1,155 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"　"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>金诚集团无卡消费后台管理系统</title>
+<link href="css/admin.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="../js/jquery-1.9.1.min.js"></script>
+<style>
+.menu ul{display:none;}
+.menu{overflow-y: scroll;height:100%;}
+body {background:#213246;}
+.menu h4 {font-weight: normal;font-size:16px;margin:0;padding:10px;padding-left:30px;font-family: "微软雅黑";";}
+</style>
+
+
+</head>
+
+<body>
+<div class="mainLeft">
+  <div class="menu">
+     <h3><a href="javascript:void(0);">一般管理员</a></h3>
+      <h4><a class="merchant" href="manage_iframe_all.html" target="mainFrame">商户</a></h4>
+     <span id="content">
+		
+	 </span>
+	
+	
+  </div>
+</div>
+</body>
+<script type="text/javascript">
+
+
+$(document).ready(function(){	
+
+		
+		 $("h4").click(function(){  
+            $(".current").removeClass("current");
+			 $(".current2").removeClass("current2");  
+            $(this).addClass("current");      
+        });  
+	  $("li").each(function(){  
+        $(this).click(function(){ 
+			$(".current").removeClass("current");
+			$(".current2").removeClass("current2");
+			$(this).addClass("current2");  
+		
+        });  
+	
+    }); 
+	 
+	$("h4").each(function(index,domEle){			
+			$(domEle).click(function(){				
+					$(domEle).next("ul").slideToggle("fast");
+			});
+		});
+	
+	$("#content").hide(); 
+	$(".merchant").click(function(){
+		$("#content").slideToggle();
+	});
+	
+     $.ajax({ 
+                type: "post", 
+                cache: false, 
+                dataType: 'json',
+                url: "../manage/LeftManage.ext",
+                data:{
+					"merchantid":"allmer"
+                 },
+				success: function(msg){
+				
+					   if (msg.merchants.length>0) {
+								for(var i=0;i<msg.merchants.length;i++){	
+									var name=msg.merchants[i].mername;
+									var merid=msg.merchants[i].merchantid;
+									
+									var $a=$("<a onclick='show("+merid+")'>"+name+"</a>");
+									var $h2=$("<h2 onclick='addcss(this)'></h2>");
+									
+									var $ul=$("<ul id="+merid+"></ul>");
+									$a.attr('href','manage_iframe_merchant.html?id='+merid);  
+									$a.attr('target','mainFrame');
+									$h2.append($a);
+									$("#content").append($h2);
+									$("#content").append($ul);
+									
+								}
+							
+					   } else {
+							
+					   } 
+                 },
+                error: function(data){
+                    alert("网络错误或未登陆..");
+                }
+    });	
+	
+});
+function show(id){
+		if($("#"+id+" li").length>0){
+		//alert(1);
+			$("#"+id).slideToggle("fast");
+		}else{
+		//alert(2);
+		 $.ajax({ 
+				type: "post", 
+				cache: false, 
+				dataType: 'json',
+				url: "../manage/LeftManage.ext",
+				data:{
+					"merchantid":id
+				 },
+				success: function(msg){
+				
+				   if (msg.users.length>0) {
+						for(var i=0;i<msg.users.length;i++){
+							var name=msg.users[i].username;
+							var userid=msg.users[i].userid;
+		
+							var $aa=$("<a>"+name+"</a>");
+							$aa.attr('href','manage_iframe_consume.html?id='+id+"-"+userid);  
+							$aa.attr('target','mainFrame');
+							var $li=$("<li onclick='addcss2(this)'></li>");							
+							$li.append($aa);
+							$("#"+id).append($li);
+						}
+												
+					}else {
+							
+					}
+				},
+                error: function(data){
+                    alert("网络错误或未登陆..");
+                }
+		});
+		$("#"+id).slideToggle("fast");
+	}
+}
+	function addcss(a){
+			$(".current").removeClass("current");
+			$(".current2").removeClass("current2");  
+            $(a).addClass("current");      
+	}
+	function addcss2(a){
+			$(".current").removeClass("current");
+			$(".current2").removeClass("current2");  
+            $(a).addClass("current2");      
+	}
+	
+
+
+		
+</script> 
+</html>

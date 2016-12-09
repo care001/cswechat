@@ -1,0 +1,369 @@
+package com.jc.ext.oper;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.ServletException;
+import javax.servlet.ServletOutputStream;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.ibatis.session.SqlSession;
+
+import com.jc.mybatis.domain.LedgerData;
+import com.jc.mybatis.mapper.ConLedgerMapper;
+import com.jc.mybatis.mapper.MerchantMapper;
+import com.jc.util.Coder;
+import com.jc.util.MyBatisUtil;
+import com.lowagie.text.Document;
+import com.lowagie.text.DocumentException;
+import com.lowagie.text.Element;
+import com.lowagie.text.Font;
+import com.lowagie.text.PageSize;
+import com.lowagie.text.Paragraph;
+import com.lowagie.text.Phrase;
+import com.lowagie.text.pdf.BaseFont;
+import com.lowagie.text.pdf.PdfPCell;
+import com.lowagie.text.pdf.PdfPTable;
+import com.lowagie.text.pdf.PdfWriter;
+
+/**
+ * 导出结算单
+ * @author qianjia
+ * 2016.9.18
+ */
+@WebServlet("/oper/MerBillPdf.ext")
+public class MerBillPdf extends HttpServlet{
+	
+	private static final long serialVersionUID = 1L;
+	private static Font headfont ;// 设置字体大小 
+    private static Font keyfont;// 设置字体大小 
+
+    static{ 
+        BaseFont bfChinese;
+        try { 
+            
+            bfChinese = BaseFont.createFont("STSong-Light","UniGB-UCS2-H",BaseFont.NOT_EMBEDDED); 
+            headfont = new Font(bfChinese, 10, Font.BOLD);// 设置字体大小 
+            keyfont = new Font(bfChinese, 11, Font.BOLD);// 设置字体大小 
+        } catch (Exception e) {          
+            e.printStackTrace(); 
+        }  
+    } 
+	@Override
+	protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+		ByteArrayOutputStream stream = new ByteArrayOutputStream();
+		String merid=req.getParameter("merid");
+		String month=req.getParameter("month");
+		merid="3";
+		month="2016-09";
+		Document document = new Document(PageSize.A4, 50, 50, 50, 50);
+		try {
+		PdfWriter writer = PdfWriter.getInstance(document, stream);
+		
+		//3.打开文档
+		document.open();
+		//4.向文档中添加内容
+		//通过 com.lowagie.text.Paragraph 来添加文本。可以用文本及其默认的字体、颜色、大小等等设置来创建一个默认段落
+		Paragraph pt=new Paragraph("结算单",headfont);//设置字体样式
+		pt.setAlignment(1);//设置文字居中 0靠左   1，居中     2，靠右
+		document.add(new Paragraph("\n"));
+		PdfPTable table=null;
+		if(merid!=null&&month!=null){
+			table = createTable(merid,month);
+		}
+		table.setSpacingBefore(5);
+		table.setSpacingAfter(5);
+		document.add(table);
+
+		document.add(new Paragraph("\n"));
+		pt=new Paragraph(Coder.formatTime(new Date())+"\t\t\t\t\t\t"+"无卡消费系统",keyfont);
+		pt.setAlignment(2);
+		document.add(pt);
+
+		//5.关闭文档
+		document.close();
+		writer.close();
+		} catch (DocumentException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} 
+		//设置响应文档类型为pdf
+		resp.setContentType("application/pdf");
+		//设置响应数据大小
+		resp.setContentLength(stream.size());
+		//获取响应数据流
+		ServletOutputStream out = resp.getOutputStream();
+		//将pdf数据流写入响应数据流中
+		stream.writeTo(out); 
+		stream.close();
+		out.flush();
+		out.close(); 
+	}
+	
+	@Override
+	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+		doPost(req, resp);
+	}
+	
+	
+	
+
+
+	/**合并单元格setColspan()函数举例*/
+	public static PdfPTable createTable(String merid,String month)throws DocumentException {
+		Map<String, String> querymap=new HashMap<String, String>();
+		Map<String, String> timemap=Coder.getLedgerTime(month);
+		querymap.put("startTime", timemap.get("first"));
+		querymap.put("endTime", timemap.get("last"));
+		querymap.put("merid", merid);
+		double all=0.0;
+		String merName = "";
+		List<LedgerData> ledgerDatas = null;
+		SqlSession session = MyBatisUtil.getSession();
+		try {
+			ConLedgerMapper mapper = session.getMapper(ConLedgerMapper.class);
+			MerchantMapper merchantMapper = session.getMapper(MerchantMapper.class);
+			ledgerDatas = mapper.sumAgentMoneyByMerId(querymap);
+			merName = merchantMapper.selectByPrimaryKey(Integer.parseInt(merid)).getMername();
+		} catch (Exception e) {
+			// TODO: handle exception
+		}finally{
+			session.close();
+		}
+		
+		
+	    PdfPTable table = new PdfPTable(new float[]{ 1, 3, 3, 7});
+	    table.setWidthPercentage(85f);
+	    
+	    PdfPCell cell;
+	    cell = new PdfPCell(new Phrase("商户结算单（"+month+"）",keyfont));
+	    cell.setColspan(4);
+	    cell.setUseAscender(true);
+	    cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+	    cell.setMinimumHeight(30);
+	    cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+	    table.addCell(cell);//添加标题
+	    
+	    cell = new PdfPCell(new Phrase("商户",keyfont));
+	    cell.setColspan(2);
+	    cell.setUseAscender(true);
+	    cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+	    cell.setMinimumHeight(30);
+	    cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+	    table.addCell(cell);
+	    cell = new PdfPCell(new Phrase(merName,keyfont));
+	    cell.setColspan(2);
+	    cell.setUseAscender(true);
+	    cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+	    cell.setMinimumHeight(30);
+	    cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+	    table.addCell(cell);
+	    
+	    cell = new PdfPCell(new Phrase("结算时间",keyfont));
+	    cell.setColspan(2);
+	    cell.setUseAscender(true);
+	    cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+	    cell.setMinimumHeight(30);
+	    cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+	    table.addCell(cell);
+	    cell = new PdfPCell(new Phrase(timemap.get("first")+"——"+timemap.get("last"),keyfont));
+	    cell.setColspan(2);
+	    cell.setUseAscender(true);
+	    cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+	    cell.setMinimumHeight(30);
+	    cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+	    table.addCell(cell);
+	    
+	    cell = new PdfPCell(new Phrase("序号",keyfont));
+	    cell.setUseAscender(true);
+	    cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+	    cell.setMinimumHeight(30);
+	    cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+	    table.addCell(cell);
+	    cell = new PdfPCell(new Phrase("发行主体",keyfont));
+	    cell.setUseAscender(true);
+	    cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+	    cell.setMinimumHeight(30);
+	    cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+	    table.addCell(cell);
+	    cell = new PdfPCell(new Phrase("结算主体",keyfont));
+	    cell.setUseAscender(true);
+	    cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+	    cell.setMinimumHeight(30);
+	    cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+	    table.addCell(cell);
+	    cell = new PdfPCell(new Phrase("金额（金诚币，元）",keyfont));
+	    cell.setUseAscender(true);
+	    cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+	    cell.setMinimumHeight(30);
+	    cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+	    table.addCell(cell);
+	    
+	    if(Coder.isListNotEmpty(ledgerDatas)){
+			   for (int i = 0; i < ledgerDatas.size(); i++) {
+			    	LedgerData ledgerData=ledgerDatas.get(i);
+			    	cell = new PdfPCell(new Phrase(String.valueOf(i+1),keyfont));
+				    
+				    cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+				    table.addCell(cell);
+				    cell = new PdfPCell(new Phrase(ledgerData.getMername(),keyfont));
+				    
+				    cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+				    table.addCell(cell);
+				    cell = new PdfPCell(new Phrase(ledgerData.getAgencyname(),keyfont));
+				    
+				    cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+				    table.addCell(cell);
+				    cell = new PdfPCell(new Phrase(String.valueOf(ledgerData.getMoney()),keyfont));
+				    
+				    cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+				    table.addCell(cell);
+				    all=new BigDecimal(all).add(new BigDecimal(ledgerData.getMoney())).doubleValue();
+				}
+		   }
+	    
+	    cell = new PdfPCell(new Phrase("1",keyfont));
+	    
+	    cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+	    table.addCell(cell);
+	    cell = new PdfPCell(new Phrase("金观诚财富",keyfont));
+	    
+	    cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+	    table.addCell(cell);
+	    cell = new PdfPCell(new Phrase("金诚互联网金融",keyfont));
+	    
+	    cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+	    table.addCell(cell);
+	    cell = new PdfPCell(new Phrase("12548.00",keyfont));
+	    
+	    cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+	    table.addCell(cell);
+	    
+	    
+	    cell = new PdfPCell(new Phrase("2",keyfont));
+	    
+	    cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+	    table.addCell(cell);
+	    cell = new PdfPCell(new Phrase("纽堡迪",keyfont));
+	    
+	    cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+	    table.addCell(cell);
+	    cell = new PdfPCell(new Phrase("金观诚财富",keyfont));
+	    
+	    cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+	    table.addCell(cell);
+	    cell = new PdfPCell(new Phrase("256584.80",keyfont));
+	    
+	    cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+	    table.addCell(cell);
+
+	    cell = new PdfPCell(new Phrase("应付账款（小计）",keyfont));
+	    cell.setColspan(3);
+	    cell.setUseAscender(true);
+	    cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+	    cell.setMinimumHeight(30);
+	    cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+	    table.addCell(cell);
+	    cell = new PdfPCell(new Phrase("378562.80",keyfont));
+	    cell.setColspan(1);
+	    cell.setUseAscender(true);
+	    cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+	    cell.setMinimumHeight(30);
+	    cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+	    table.addCell(cell);
+	    
+	    cell = new PdfPCell(new Phrase("序号",keyfont));
+	    cell.setUseAscender(true);
+	    cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+	    cell.setMinimumHeight(30);
+	    cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+	    table.addCell(cell);
+	    cell = new PdfPCell(new Phrase("充值机构",keyfont));
+	    cell.setUseAscender(true);
+	    cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+	    cell.setMinimumHeight(30);
+	    cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+	    table.addCell(cell);
+	    cell = new PdfPCell(new Phrase("结算主体",keyfont));
+	    cell.setUseAscender(true);
+	    cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+	    cell.setMinimumHeight(30);
+	    cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+	    table.addCell(cell);
+	    cell = new PdfPCell(new Phrase("金额（现金，元）",keyfont));
+	    cell.setUseAscender(true);
+	    cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+	    cell.setMinimumHeight(30);
+	    cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+	    table.addCell(cell);
+	   
+	    
+	    cell = new PdfPCell(new Phrase("1",keyfont));
+	    
+	    cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+	    table.addCell(cell);
+	    cell = new PdfPCell(new Phrase("金观诚财富",keyfont));
+	   
+	    cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+	    table.addCell(cell);
+	    cell = new PdfPCell(new Phrase("金诚互联网金融",keyfont));
+	    
+	    cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+	    table.addCell(cell);
+	    cell = new PdfPCell(new Phrase("12548.00",keyfont));
+	    
+	    cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+	    table.addCell(cell);
+	    
+	    cell = new PdfPCell(new Phrase("应付账款（小计）",keyfont));
+	    cell.setColspan(3);
+	    cell.setUseAscender(true);
+	    cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+	    cell.setMinimumHeight(30);
+	    cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+	    table.addCell(cell);
+	    cell = new PdfPCell(new Phrase("12548.00",keyfont));
+	    cell.setColspan(1);
+	    cell.setUseAscender(true);
+	    cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+	    cell.setMinimumHeight(30);
+	    cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+	    table.addCell(cell);
+	    
+	    cell = new PdfPCell(new Phrase("合计（元）",keyfont));
+	    cell.setColspan(3);
+	    cell.setUseAscender(true);
+	    cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+	    cell.setMinimumHeight(30);
+	    cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+	    table.addCell(cell);
+	    cell = new PdfPCell(new Phrase("42548.80",keyfont));
+	    cell.setColspan(1);
+	    cell.setUseAscender(true);
+	    cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+	    cell.setMinimumHeight(30);
+	    cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+	    table.addCell(cell);
+	    
+	    cell = new PdfPCell(new Phrase("\n\t金诚互联网金融：\n\n\n\n\t\t\t\t\t\t\t\t经办人签字：\n\t\t\t\t\t\t\t\t\t（盖公章）",keyfont));
+	    cell.setColspan(3);
+	    cell.setMinimumHeight(120);
+	    cell.setHorizontalAlignment(Element.ALIGN_LEFT);
+	    table.addCell(cell);
+	    cell = new PdfPCell(new Phrase("\n\t桃花源记:\n\n\n\n\t\t\t\t\t\t\t经办人签字：\n\t\t\t\t\t\t\t\t（盖公章）",keyfont));
+	    cell.setColspan(1);
+	    cell.setMinimumHeight(120);
+	    cell.setHorizontalAlignment(Element.ALIGN_LEFT);
+	    table.addCell(cell);
+	    return table;
+	}		
+		
+}

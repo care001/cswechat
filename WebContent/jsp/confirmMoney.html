@@ -3,11 +3,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=0">
     <title>确认金额</title>
-    <link rel="stylesheet" href="css/weui.css"/>
-    <link rel="stylesheet" href="css/noCard.css"/>
-    <link rel="stylesheet" href="path/to/weui/dist/style/weui.min.css"/>
+    <link rel="stylesheet" type="text/css" href="css/weui.css"/>
+    <link rel="stylesheet" type="text/css" href="css/noCard.css"/>
+    <!-- <link rel="stylesheet" href="path/to/weui/dist/style/weui.min.css"/> -->
     <style>
 	.f18{color:#666;}
+    #rmb{float:left;margin-top:-2rem}
+	#remarks{border-radius:0;border:none;border-top:1px solid #e5e3e3;height:2.5em;width:126%;line-height:2.5em;float:left;margin-left:-4rem;margin-bottom:-2em;margin-top:1.8rem;font-size:0.8em;padding:0.1rem}
+	
+	
 	</style>   
 </head>
 <body>
@@ -17,15 +21,18 @@
     	<div class="weui_cells_title f18"><strong>收款金额</strong></div>
 	    <div class="weui_cells weui_cells_form">
 		        <div class="weui_cell paddingTopBottom">
-		            <div class="weui_cell_hd"><label class="weui_label"><span class="font-label">￥</span></label></div>
+		            <div class="weui_cell_hd"><label class="weui_label"><span class="font-label" id="rmb">￥</span></label></div>
 		            <div class="weui_cell_bd weui_cell_primary">
-		                	<input type="number" id="number" name="money" class="weui_input font-input" placeholder="0.00"/>
+		                	<input type="number" id="number" name="money" class="weui_input font-input" placeholder="0.00"/> 
+		                	 <input maxlength="20" type="text" id="remarks" class="weui_input font-input" placeholder="添加备注(20字内)"/>	
 		            </div>
 		        </div> 
+		        
+		            
   	    </div>
   	    <p id="errorInfo"></p>
 		<div class="btnWrap marginTop">
-		    <span  class="weui_btn weui_btn_primary" id="scanQRCode1"><i class="icon_scan"></i>扫一扫收款</span>
+		    <span  class="weui_btn weui_btn_primary" id="scanQRCode"><i class="icon_scan"></i>扫一扫收款</span>
 		</div> 
     </form>
 </section>
@@ -79,7 +86,7 @@ $.ajax({
        dataType: 'json',
        url: "../GetJSSDK.ext",
        data:{
-
+			jssdkurl:location.href.split('#')[0]
         },
 		success: function(msg) {
             wx.config({
@@ -118,7 +125,7 @@ document.body.appendChild(temp);
 } 
 
   //扫描二维码并返回结果
-  document.querySelector('#scanQRCode1').onclick = function () {
+  document.querySelector('#scanQRCode').onclick = function () {
   	var a=/^([0-9][\d]{0,5}|0)(\.[\d]{1,2})?$/;
   	if(!a.test($("#number").val())||parseFloat($("#number").val())<=0){
   		$("#dialog2").show();
@@ -136,11 +143,12 @@ document.body.appendChild(temp);
                 url: "../DoConsume.ext",
                 data:{
 					money:$("#number").val(),
-					client:client
+					client:client,
+					remark:$("#remarks").val()
                  },
 				success: function(msg) {
 					if(msg.flag==true){
-                   		post('https://open.weixin.qq.com/connect/oauth2/authorize?appid=wx19f885b88db57ae4&redirect_uri=http%3A%2F%2F5dadee0f.ngrok.natapp.cn%2FConsumeSuc.ext&response_type=code&scope=snsapi_base&state=buss;'+msg.paytime+';'+msg.clientid+';'+msg.money+'#wechat_redirect', {}); 
+                   		post('https://open.weixin.qq.com/connect/oauth2/authorize?appid=wx19f885b88db57ae4&redirect_uri=http%3A%2F%2Fwxqj.gold-finance.com.cn%2FConsumeSuc.ext&response_type=code&scope=snsapi_base&state=buss;'+msg.paytime+';'+msg.clientid+';'+msg.money+'#wechat_redirect', {}); 
                    	}else{
                    		$("#dialogmsg").html(msg.desc);
                    		$("#dialog").show();
@@ -150,7 +158,7 @@ document.body.appendChild(temp);
            });
         
       }
-    });
+    }); 
   };
 
 

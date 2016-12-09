@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>商户二维码</title>
+</head>
+<style>
+#qrcode{margin-top:200px;margin-left:700px}
+.name{margin-top:50px;margin-left:880px;float:left}
+</style>
+<body>
+   <div id="qrcode"></div>
+   <strong class="name">商户名称</strong>
+</body>
+
+<script src="../js/jquery-1.9.1.min.js"></script>
+<script src="../js/jquery.qrcode.min.js"></script>
+<script>
+$(function(){
+//获取前一个页面url中传递的内容
+
+	function getParam(name) {
+         var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)");
+         var r = window.location.search.substr(1).match(reg);
+         if (r != null)
+             return decodeURI(r[2]);   //对参数进行decodeURI解码
+         return null;
+     }
+ 
+    id= getParam("id");
+   	name= getParam("name");
+	
+	$("#qrcode").qrcode({width:400,height:400,correctLevel:0,text:"https://open.weixin.qq.com/connect/oauth2/authorize?appid=wx4178cb1fe5a32c93&redirect_uri=http%3A%2F%2Fwxcwd.gold%2dfinance.com.cn%2Fentwechat%2Fhtml%2Fpay%2FpayToShop.html&response_type=code&scope=snsapi_base&state="+id+"#wechat_redirect"});
+	$(".name").text(name);
+	
+});
+</script> 
+</body>
+</html>

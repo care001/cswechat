@@ -1,0 +1,92 @@
+package com.jc.bus.ext;
+
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.List;
+
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import org.apache.ibatis.session.SqlSession;
+import org.apache.log4j.Logger;
+import org.json.JSONObject;
+
+import com.jc.dao.UserMapper;
+import com.jc.entity.User;
+import com.jc.entity.UserExample;
+import com.jc.util.MyBatisUtil;
+
+/**
+ * 
+ * @author qianjia
+ * 2015.6.5
+ */
+@WebServlet("/bus/UserListByBus.ext")
+public class UserListByBus extends HttpServlet{
+
+	private static final long serialVersionUID = -3692170308778424641L;
+	private static Logger logger = Logger.getLogger(UserListByBus.class);
+	private static final int PAGESIZE=10;
+
+	@Override
+	protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+		String pagenostr = req.getParameter("pageno");
+		int pageno=1;
+		if(pagenostr!=null&&!pagenostr.equals("")){
+			pageno=Integer.valueOf(pagenostr).intValue();
+		}
+		HttpSession httpSession=req.getSession();
+		User admin=(User)httpSession.getAttribute("admin");//查看登陆账户
+		if(admin==null||admin.getUserid()<=0||!admin.getStatus().equals("2")){
+			logger.info("未登陆或者登陆的不是商户账号");
+		}
+		int merchantid=admin.getMerchantid();
+		SqlSession session = MyBatisUtil.getSession();
+		UserMapper mapper = session.getMapper(UserMapper.class);
+		UserExample example=new UserExample();
+		example.or().andMerchantidEqualTo(merchantid).andStatusEqualTo("1");
+		example.or().andMerchantidEqualTo(merchantid).andStatusEqualTo("99");
+		int count=mapper.countByExample(example);
+		example.setLimitSize(PAGESIZE);
+		example.setLimitStart((pageno-1)*PAGESIZE);
+		List<User> users=mapper.selectByExample(example);
+		if(merchantid>0){
+			logger.info("商户");
+		}
+		session.close();
+		JSONObject result = new JSONObject();
+		try {
+	    if(count%PAGESIZE==0){
+	    	if(count/PAGESIZE==0){
+		    	req.setAttribute("pageall", 1);
+		    	result.put("pageall",1);
+			}else{
+				req.setAttribute("pageall", count/PAGESIZE);
+				result.put("pageall", count/PAGESIZE);
+			}
+		}else{
+			req.setAttribute("pageall", count/PAGESIZE+1);
+			result.put("pageall",count/PAGESIZE+1);
+		}
+	    result.put("users", users);
+		result.put("usersum", count);
+		result.put("pageno", pageno);
+		} catch (Exception e) {
+			logger.info(e);
+		}
+		PrintWriter out = resp.getWriter();
+		out.print(result.toString());
+		out.close();
+	}
+	@Override
+	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+		doPost(req, resp);
+	}
+
+	
+
+}

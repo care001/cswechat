@@ -32,5 +32,7 @@
     <mapper resource="com/jc/dao/MerchantMapper.xml" />
     <mapper resource="com/jc/dao/BankMapper.xml" />
     <mapper resource="com/jc/dao/ConFailMapper.xml" />
+    <mapper resource="com/jc/dao/AgencyMapper.xml" />
+    <mapper resource="com/jc/dao/ConfigMapper.xml" />
   </mappers>
 </configuration>

@@ -1,0 +1,62 @@
+package com.jc.ext;
+
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.List;
+
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.ibatis.session.SqlSession;
+import org.json.JSONObject;
+
+import com.jc.mybatis.domain.Consume;
+import com.jc.mybatis.domain.ConsumeExample;
+import com.jc.mybatis.mapper.ConsumeMapper;
+import com.jc.util.Coder;
+import com.jc.util.MyBatisUtil;
+
+/**
+ * 
+ * @author qianjia
+ * 2016.8.30
+ * 消费密码轮询（暂未用）
+ */
+@WebServlet ("/WantEnterPwd.ext")
+public class WantEnterPwd extends HttpServlet{
+	
+	private static final long serialVersionUID = 1L;
+
+	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException,IOException{
+		String empno=request.getParameter("empno");
+		JSONObject json=new JSONObject();
+		SqlSession session=MyBatisUtil.getSession();
+		boolean flag=false;
+		ConsumeMapper consumeMapper=session.getMapper(ConsumeMapper.class);
+		ConsumeExample example=new ConsumeExample();
+		example.or().andClientidEqualTo(empno);
+		example.setOrderByClause("maketime desc");
+		List<Consume> consumes=consumeMapper.selectByExample(example);
+		try {
+			if(Coder.isListNotEmpty(consumes)){
+				Consume consume=consumes.get(0);
+				if(consume.getCsstatus().equals("-1")){
+					flag=true;
+					json.put("consume", new JSONObject(consume));
+				}
+			}
+			json.put("flag", flag);
+		} catch (Exception e) {
+			
+		}
+		
+		PrintWriter printWriter=response.getWriter();
+		printWriter.print(json.toString());
+		printWriter.close();
+		
+	}
+
+}

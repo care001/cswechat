@@ -1,0 +1,21 @@
+package cn.com.goldfinance.mapper.wkxf;
+
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Map;
+
+import cn.com.goldfinance.domain.wkxf.AccTransdetail;
+import cn.com.goldfinance.domain.wkxf.CoinPojo;
+
+
+public interface AccTransdetailMapper {
+	
+	public List<AccTransdetail> getAccTransdetailByEmpId(String EmpId);
+	public List<AccTransdetail> getAccTransdetailByCoinPojo(CoinPojo coinPojo);
+	public List<AccTransdetail> getAccTransdetailByMap(Map<String, Object> map);
+	public List<Map<String, BigDecimal>> getInAndOutSumsByMap(Map<String, String> map);
+	public Map<String, BigDecimal> getInAndOutSumByMap(Map<String, String> map);
+	public List<AccTransdetail> getAccTransdetailLimitByMap(Map<String, Object> map);
+	public int getAccTransdetailCountByMap(Map<String, Object> map);
+	public List<AccTransdetail> getFXZTByMap(Map<String, Object> map);
+}

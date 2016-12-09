@@ -1,0 +1,37 @@
+package cn.com.goldfinance.domain.wkxf;
+
+public class TopUp {
+
+	private String makeTime;
+	
+	private String agencyNo;
+	
+	private double Money;
+
+	public String getMakeTime() {
+		return makeTime;
+	}
+
+	public void setMakeTime(String makeTime) {
+		this.makeTime = makeTime;
+	}
+
+	public String getAgencyNo() {
+		return agencyNo;
+	}
+
+	public void setAgencyNo(String agencyNo) {
+		this.agencyNo = agencyNo;
+	}
+
+	public double getMoney() {
+		return Money;
+	}
+
+	public void setMoney(double money) {
+		Money = money;
+	}
+
+	
+	
+}

@@ -1,0 +1,127 @@
+package com.jc.ext;
+
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.commons.io.IOUtils;
+import org.apache.ibatis.session.SqlSession;
+import org.apache.log4j.Logger;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import com.jc.mybatis.domain.Consume;
+import com.jc.mybatis.mapper.ConsumeMapper;
+import com.jc.util.Coder;
+import com.jc.util.JDBCUtil;
+import com.jc.util.MyBatisUtil;
+import com.jc.util.NoCardUtil;
+import com.jc.util.RsaUtil;
+
+/**
+ * 
+ * @author qianjia
+ * 2016.6.30
+ * ID转IC
+ */
+@WebServlet("/Transfer.ext")
+public class Transfer extends HttpServlet{
+	
+	private static final long serialVersionUID = 1L;
+	JDBCUtil jdbcUtil=JDBCUtil.getInstance();
+	private static Logger logger=Logger.getLogger(Transfer.class);
+	@Override
+	protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+		String client=IOUtils.toString(req.getInputStream());
+		JSONObject result = new JSONObject();
+		byte[] decodedData;
+		boolean flag=false;
+		String paytime=Coder.formatTime(new Date());
+		JSONObject json = null;
+		Map<String, Object> map=null;
+		//解密
+		try {
+			byte[] encodedData=Coder.parseHexStr2Byte(client);
+			decodedData = RsaUtil.decryptByPrivateKey(encodedData, RsaUtil.privateKey);
+			client = new String(decodedData);
+			json = new JSONObject(client);
+			if(json.getDouble("amount")>0){
+				map=NoCardUtil.ICToID(json.getString("clientid"), json.getDouble("amount"));
+			}else{
+				map=new HashMap<String, Object>();
+				map.put("gold", String.valueOf(json.getDouble("amount")));
+	    		map.put("cash", "0.0");
+	    		map.put("conflag", -1);
+				map.put("desc", "请检查金额");
+			}
+		} catch (Exception e) {
+			logger.info("解密失败");	
+		}
+		
+		if(map!=null&&(Integer)map.get("conflag")==0){
+			flag=true;
+		}
+		
+		try {
+			result.put("clientid", json.getString("clientid"));
+			result.put("status", flag);
+			result.put("desc", (String)map.get("desc"));
+			result.put("date", paytime);
+		} catch (JSONException e1) {
+			e1.printStackTrace();
+		}
+		byte[] data = result.toString().getBytes();
+		String miwem = "";
+		try {
+			byte[] encodedData = RsaUtil.encryptByPrivateKey(data, RsaUtil.privateKey);
+			miwem=RsaUtil.parseByte2HexStr(encodedData);
+		} catch (Exception e) {
+			logger.info("加密失败");
+			e.printStackTrace();
+		}
+		PrintWriter out = resp.getWriter();
+		out.print(miwem);
+		out.close();
+		
+		SqlSession session = MyBatisUtil.getSession();
+		
+		//保存消费历史
+		try {
+			ConsumeMapper mapper2 = session.getMapper(ConsumeMapper.class);
+			if(Double.valueOf((String) map.get("gold"))!=0){
+				if(flag){
+					Consume consume=new Consume();
+					consume.setClientid(json.getString("clientid"));
+					consume.setMerchantid(-2);
+					consume.setCsmerchat("ID金诚币转IC");
+					consume.setMername("ID金诚币转IC");
+					consume.setCssum(Double.valueOf((String) map.get("gold")));
+					consume.setMaketime(paytime);
+					consume.setPushflag("400");
+					consume.setRemark((String)map.get("desc"));
+					consume.setUserid(-2);
+					consume.setWallettype("7");
+					consume.setClientname((String)map.get("clientname"));
+					consume.setCsstatus("2");
+					mapper2.insert(consume);
+				}
+			}
+			
+			logger.info("------->"+(String)map.get("clientname")+" 存储转账："+(String) map.get("gold")+"金诚币记录成功,提示信息："+(String)map.get("desc"));
+			
+		} catch (Exception e) {
+			logger.info("------->"+(String)map.get("clientname")+" 存储转账："+(String) map.get("gold")+"金诚币记录失败,提示信息："+(String)map.get("desc")+e);
+		}finally{
+			session.close();
+		}		
+	}
+}
+

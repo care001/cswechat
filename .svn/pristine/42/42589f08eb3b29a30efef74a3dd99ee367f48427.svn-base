@@ -1,0 +1,57 @@
+package com.jc.mybatis.domain;
+
+public class LedgerData {
+	
+	private double money;
+	
+	private String mername;
+	
+	private String agencyno;
+	
+	private String agencyname;
+	
+	private String merid;
+
+	public double getMoney() {
+		return money;
+	}
+
+	public void setMoney(double money) {
+		this.money = money;
+	}
+
+	public String getMername() {
+		return mername;
+	}
+
+	public void setMername(String mername) {
+		this.mername = mername;
+	}
+
+	public String getAgencyno() {
+		return agencyno;
+	}
+
+	public void setAgencyno(String agencyno) {
+		this.agencyno = agencyno;
+	}
+
+	public String getAgencyname() {
+		return agencyname;
+	}
+
+	public void setAgencyname(String agencyname) {
+		this.agencyname = agencyname;
+	}
+
+	public String getMerid() {
+		return merid;
+	}
+
+	public void setMerid(String merid) {
+		this.merid = merid;
+	}
+	
+	
+
+}

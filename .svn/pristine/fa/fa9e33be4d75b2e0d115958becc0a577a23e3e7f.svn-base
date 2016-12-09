@@ -1,0 +1,210 @@
+package com.jc.util;
+
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.ibatis.session.SqlSession;
+
+import cn.com.goldfinance.domain.wkxf.ExcelGather;
+import cn.com.goldfinance.mapper.wkxf.AccTransdetailMapper;
+
+import com.jc.mybatis.domain.Consume;
+import com.jc.mybatis.domain.ConsumeExample;
+import com.jc.mybatis.domain.ConsumeExample.Criteria;
+import com.jc.mybatis.mapper.ConsumeMapper;
+
+public class PowerDataOperUtil {
+	/**获取按条件获取分页记录，返回分页信息*/
+	public static Map<String, Object> getHisByPower(Map<String, Object> map,String power){
+		Map<String, Object> retmap=new HashMap<String, Object>();
+		List<Consume> consumes=new ArrayList<Consume>();
+		int conssum=0;
+		int pagesize= (Integer) map.get("pagesize");
+		int pagestart=(Integer)map.get("pagestart");
+		SqlSession session = MyBatisUtil.getSession();
+		ConsumeMapper mapper = session.getMapper(ConsumeMapper.class);
+		ConsumeExample example=new ConsumeExample();
+		if(power.equals("1")||power.equals("99")){
+			example.or().andCsstatusEqualTo("1").andUseridEqualTo((Integer)map.get("userid")).andMaketimeBetween((String)map.get("seardate1"), (String)map.get("seardate2"));
+			conssum=mapper.countByExample(example);//获取数据量
+			example.setOrderByClause("maketime");
+			example.setLimitSize(pagesize);
+			example.setLimitStart(pagestart);
+			consumes=mapper.selectByExample(example);
+			
+		}else if(power.equals("2")){
+			Criteria criteria=example.createCriteria();
+			criteria.andCsstatusEqualTo("1").andMerchantidEqualTo((Integer)map.get("Merchantid")).andMaketimeBetween((String)map.get("seardate1"), (String)map.get("seardate2"));
+			if(map.get("userid")!=null&&Coder.isNumeric((String)map.get("userid"))){
+				criteria.andUseridEqualTo(Integer.parseInt((String)map.get("userid")));
+			}
+			conssum=mapper.countByExample(example);//获取数据量
+			example.setOrderByClause("maketime");
+			example.setLimitSize(pagesize);
+			example.setLimitStart(pagestart);
+			consumes=mapper.selectByExample(example);
+			
+		}else if(power.equals("3")||power.equals("4")){
+			Criteria criteria=example.createCriteria();
+			criteria.andCsstatusEqualTo("1").andMaketimeBetween((String)map.get("seardate1"), (String)map.get("seardate2"));
+			if(map.get("userid")!=null&&Coder.isNumeric((String)map.get("userid"))){
+				criteria.andUseridEqualTo(Integer.parseInt((String)map.get("userid")));
+			}
+			if(map.get("Merchantid")!=null&&Coder.isNumeric((String)map.get("Merchantid"))){
+				criteria.andMerchantidEqualTo(Integer.parseInt((String)map.get("Merchantid")));
+			}
+			conssum=mapper.countByExample(example);//获取数据量
+			example.setOrderByClause("maketime");
+			example.setLimitSize(pagesize);
+			example.setLimitStart(pagestart);
+			consumes=mapper.selectByExample(example);
+			
+		}else{
+			
+		}
+		if(Coder.isListNotEmpty(consumes)){
+			retmap.put("consize", consumes.size());
+			retmap.put("consumes", consumes);
+		}else{
+			retmap.put("consize", "0");
+			retmap.put("consumes", consumes);
+		}
+		retmap.put("pagesum", conssum);
+		if(conssum%pagesize==0){
+			if(conssum/pagesize==0){
+				retmap.put("pageall", 1);
+			}else{
+				retmap.put("pageall", conssum/pagesize);
+			}
+		}else{
+			retmap.put("pageall", (conssum/pagesize)+1);
+		}
+		session.close();
+		return retmap;
+	}
+	/**获取按条件获取所有记录（生成excel）*/
+	public static List<Consume> getAllHisByPower(Map<String, Object> map,String power){
+		List<Consume> consumes=new ArrayList<Consume>();
+		SqlSession session = MyBatisUtil.getSession();
+		ConsumeMapper mapper = session.getMapper(ConsumeMapper.class);
+		ConsumeExample example=new ConsumeExample();
+		if(power.equals("1")||power.equals("99")){
+			example.or().andCsstatusEqualTo("1").andUseridEqualTo((Integer)map.get("userid")).andMaketimeBetween((String)map.get("seardate1"), (String)map.get("seardate2"));
+			example.setOrderByClause("merchantid,userid,maketime");
+			consumes=mapper.selectByExample(example);
+		}else if(power.equals("2")){
+			Criteria criteria=example.createCriteria();
+			criteria.andCsstatusEqualTo("1").andMerchantidEqualTo((Integer)map.get("Merchantid")).andMaketimeBetween((String)map.get("seardate1"), (String)map.get("seardate2"));
+			if(map.get("userid")!=null&&Coder.isNumeric((String)map.get("userid"))){
+				criteria.andUseridEqualTo(Integer.parseInt((String)map.get("userid")));
+			}
+			example.setOrderByClause("merchantid,userid,maketime");
+			consumes=mapper.selectByExample(example);
+		}else if(power.equals("3")||power.equals("4")){
+			Criteria criteria=example.createCriteria();
+			criteria.andCsstatusEqualTo("1").andMaketimeBetween((String)map.get("seardate1"), (String)map.get("seardate2"));
+			if(map.get("userid")!=null&&Coder.isNumeric((String)map.get("userid"))){
+				criteria.andUseridEqualTo(Integer.parseInt((String)map.get("userid")));
+			}
+			if(map.get("Merchantid")!=null&&Coder.isNumeric((String)map.get("Merchantid"))){
+				criteria.andMerchantidEqualTo(Integer.parseInt((String)map.get("Merchantid")));
+			}
+			example.setOrderByClause("merchantid,userid,maketime");
+			consumes=mapper.selectByExample(example);
+		}else{
+			
+		}
+		session.close();
+		return consumes;
+	}
+	/**获取统计总信息，进行数据封装*/
+	public static ExcelGather getExcelGatherByDay(String startday,String endday){
+		ExcelGather excelGather=new ExcelGather();
+		SqlSession session = MyBatisUtil.getwkxfSession();
+		AccTransdetailMapper accTransdetailMapper = session.getMapper(AccTransdetailMapper.class);
+		Map<String, String> sermap=new HashMap<String, String>();
+		sermap.put("startTime", startday);
+		sermap.put("endTime", endday);
+		sermap.put("secid", "5");
+		//IC金诚币
+		sermap.put("type", "10");
+		excelGather.setIcjcsr1(accTransdetailMapper.getInAndOutSumByMap(sermap).get("insum")==null?new BigDecimal(0):accTransdetailMapper.getInAndOutSumByMap(sermap).get("insum"));
+		sermap.put("type", "11");
+		excelGather.setIcjcsr2(accTransdetailMapper.getInAndOutSumByMap(sermap).get("insum")==null?new BigDecimal(0):accTransdetailMapper.getInAndOutSumByMap(sermap).get("insum"));
+		sermap.put("type", "12");
+		excelGather.setIcjcsr3(accTransdetailMapper.getInAndOutSumByMap(sermap).get("insum")==null?new BigDecimal(0):accTransdetailMapper.getInAndOutSumByMap(sermap).get("insum"));
+		sermap.put("type", "20");
+		excelGather.setIcjczc1(accTransdetailMapper.getInAndOutSumByMap(sermap).get("outsum")==null?new BigDecimal(0):accTransdetailMapper.getInAndOutSumByMap(sermap).get("outsum"));
+		sermap.put("type", "21");
+		excelGather.setIcjczc2(accTransdetailMapper.getInAndOutSumByMap(sermap).get("outsum")==null?new BigDecimal(0):accTransdetailMapper.getInAndOutSumByMap(sermap).get("outsum"));
+		sermap.put("type", "22");
+		excelGather.setIcjczc3(accTransdetailMapper.getInAndOutSumByMap(sermap).get("outsum")==null?new BigDecimal(0):accTransdetailMapper.getInAndOutSumByMap(sermap).get("outsum"));
+		sermap.put("type", "23");
+		excelGather.setIcjczc4(accTransdetailMapper.getInAndOutSumByMap(sermap).get("outsum")==null?new BigDecimal(0):accTransdetailMapper.getInAndOutSumByMap(sermap).get("outsum"));
+		sermap.put("type", "24");
+		excelGather.setIcjczc5(accTransdetailMapper.getInAndOutSumByMap(sermap).get("outsum")==null?new BigDecimal(0):accTransdetailMapper.getInAndOutSumByMap(sermap).get("outsum"));
+		sermap.put("secid", "6");
+		//IC现金
+		sermap.put("type", "10");
+		excelGather.setIcxjsr1(accTransdetailMapper.getInAndOutSumByMap(sermap).get("insum")==null?new BigDecimal(0):accTransdetailMapper.getInAndOutSumByMap(sermap).get("insum"));
+		sermap.put("type", "11");
+		excelGather.setIcxjsr2(accTransdetailMapper.getInAndOutSumByMap(sermap).get("insum")==null?new BigDecimal(0):accTransdetailMapper.getInAndOutSumByMap(sermap).get("insum"));
+		sermap.put("type", "12");
+		excelGather.setIcxjsr3(accTransdetailMapper.getInAndOutSumByMap(sermap).get("insum")==null?new BigDecimal(0):accTransdetailMapper.getInAndOutSumByMap(sermap).get("insum"));
+		sermap.put("type", "20");
+		excelGather.setIcxjzc1(accTransdetailMapper.getInAndOutSumByMap(sermap).get("outsum")==null?new BigDecimal(0):accTransdetailMapper.getInAndOutSumByMap(sermap).get("outsum"));
+		sermap.put("type", "21");
+		excelGather.setIcxjzc2(accTransdetailMapper.getInAndOutSumByMap(sermap).get("outsum")==null?new BigDecimal(0):accTransdetailMapper.getInAndOutSumByMap(sermap).get("outsum"));
+		sermap.put("type", "22");
+		excelGather.setIcxjzc3(accTransdetailMapper.getInAndOutSumByMap(sermap).get("outsum")==null?new BigDecimal(0):accTransdetailMapper.getInAndOutSumByMap(sermap).get("outsum"));
+		sermap.put("type", "23");
+		excelGather.setIcxjzc4(accTransdetailMapper.getInAndOutSumByMap(sermap).get("outsum")==null?new BigDecimal(0):accTransdetailMapper.getInAndOutSumByMap(sermap).get("outsum"));
+		sermap.put("type", "24");
+		excelGather.setIcxjzc5(accTransdetailMapper.getInAndOutSumByMap(sermap).get("outsum")==null?new BigDecimal(0):accTransdetailMapper.getInAndOutSumByMap(sermap).get("outsum"));
+		sermap.put("secid", "7");
+		//ID金诚币
+		sermap.put("type", "10");
+		excelGather.setIdjcsr1(accTransdetailMapper.getInAndOutSumByMap(sermap).get("insum")==null?new BigDecimal(0):accTransdetailMapper.getInAndOutSumByMap(sermap).get("insum"));
+		sermap.put("type", "11");
+		excelGather.setIdjcsr2(accTransdetailMapper.getInAndOutSumByMap(sermap).get("insum")==null?new BigDecimal(0):accTransdetailMapper.getInAndOutSumByMap(sermap).get("insum"));
+		sermap.put("type", "12");
+		excelGather.setIdjcsr3(accTransdetailMapper.getInAndOutSumByMap(sermap).get("insum")==null?new BigDecimal(0):accTransdetailMapper.getInAndOutSumByMap(sermap).get("insum"));
+		sermap.put("type", "20");
+		excelGather.setIdjczc1(accTransdetailMapper.getInAndOutSumByMap(sermap).get("outsum")==null?new BigDecimal(0):accTransdetailMapper.getInAndOutSumByMap(sermap).get("outsum"));
+		sermap.put("type", "21");
+		excelGather.setIdjczc2(accTransdetailMapper.getInAndOutSumByMap(sermap).get("outsum")==null?new BigDecimal(0):accTransdetailMapper.getInAndOutSumByMap(sermap).get("outsum"));
+		sermap.put("type", "22");
+		excelGather.setIdjczc3(accTransdetailMapper.getInAndOutSumByMap(sermap).get("outsum")==null?new BigDecimal(0):accTransdetailMapper.getInAndOutSumByMap(sermap).get("outsum"));
+		sermap.put("type", "23");
+		excelGather.setIdjczc4(accTransdetailMapper.getInAndOutSumByMap(sermap).get("outsum")==null?new BigDecimal(0):accTransdetailMapper.getInAndOutSumByMap(sermap).get("outsum"));
+		sermap.put("type", "24");
+		excelGather.setIdjczc5(accTransdetailMapper.getInAndOutSumByMap(sermap).get("outsum")==null?new BigDecimal(0):accTransdetailMapper.getInAndOutSumByMap(sermap).get("outsum"));
+		
+		sermap.put("secid", "8");
+		//ID现金
+		sermap.put("type", "10");
+		excelGather.setIdxjsr1(accTransdetailMapper.getInAndOutSumByMap(sermap).get("insum")==null?new BigDecimal(0):accTransdetailMapper.getInAndOutSumByMap(sermap).get("insum"));
+		sermap.put("type", "11");
+		excelGather.setIdxjsr2(accTransdetailMapper.getInAndOutSumByMap(sermap).get("insum")==null?new BigDecimal(0):accTransdetailMapper.getInAndOutSumByMap(sermap).get("insum"));
+		sermap.put("type", "12");
+		excelGather.setIdxjsr3(accTransdetailMapper.getInAndOutSumByMap(sermap).get("insum")==null?new BigDecimal(0):accTransdetailMapper.getInAndOutSumByMap(sermap).get("insum"));
+		sermap.put("type", "20");
+		excelGather.setIdxjzc1(accTransdetailMapper.getInAndOutSumByMap(sermap).get("outsum")==null?new BigDecimal(0):accTransdetailMapper.getInAndOutSumByMap(sermap).get("outsum"));
+		sermap.put("type", "21");
+		excelGather.setIdxjzc2(accTransdetailMapper.getInAndOutSumByMap(sermap).get("outsum")==null?new BigDecimal(0):accTransdetailMapper.getInAndOutSumByMap(sermap).get("outsum"));
+		sermap.put("type", "22");
+		excelGather.setIdxjzc3(accTransdetailMapper.getInAndOutSumByMap(sermap).get("outsum")==null?new BigDecimal(0):accTransdetailMapper.getInAndOutSumByMap(sermap).get("outsum"));
+		sermap.put("type", "23");
+		excelGather.setIdxjzc4(accTransdetailMapper.getInAndOutSumByMap(sermap).get("outsum")==null?new BigDecimal(0):accTransdetailMapper.getInAndOutSumByMap(sermap).get("outsum"));
+		sermap.put("type", "24");
+		excelGather.setIdxjzc5(accTransdetailMapper.getInAndOutSumByMap(sermap).get("outsum")==null?new BigDecimal(0):accTransdetailMapper.getInAndOutSumByMap(sermap).get("outsum"));
+		
+		
+		session.close();
+		return excelGather;
+	}
+	
+}

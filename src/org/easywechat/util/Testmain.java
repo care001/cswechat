@@ -18,6 +18,7 @@ import cn.com.goldfinance.mapper.wkxf.HrmsEmpMapper;
 
 import com.jc.util.Coder;
 import com.jc.util.JDBCUtil;
+import com.jc.util.NoCardUtil;
 
 public class Testmain {
 	private static JDBCUtil jdbcUtil=JDBCUtil.getInstance();
@@ -90,14 +91,25 @@ public class Testmain {
 		
 		System.out.println(Coder.formatTime(new Date()));
 		try {
-			System.out.println(Coder.EncoderByMd5("thyjymhg01"));
+			System.out.println(Coder.EncoderByMd5("dengyj"));
 		} catch (Exception e) {
-			// TODO Auto-generated catch block财务管理员
+			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}  
-		/*String emp="0002958";
+		String emp="0";
+		//System.out.println(NoCardUtil.getICBalance("0001355"));
  		System.out.println("充值前余额："+PosMoney(emp,7));
- 		//System.out.println(PosPutXF(emp,2000));
- 		System.out.println("充值后余额："+PosMoney(emp,7));*/
+ 		//System.out.println(PosPutXF(emp,5000));
+ 		System.out.println("充值后余额："+PosMoney(emp,7));
+		/*SqlSession session=sqlSessionFactory.openSession(true);
+		HrmsEmpMapper hrmsEmpMapper = session.getMapper(HrmsEmpMapper.class);
+		int cardId=hrmsEmpMapper.getMaxCardIDByEmpNo("2001000");
+		double goldcoin=NoCardUtil.PosMoney(cardId, 7);
+		double cash=NoCardUtil.PosMoney(cardId, 8);
+		BigDecimal b1 = new BigDecimal(Double.toString(goldcoin));
+        BigDecimal b2 = new BigDecimal(Double.toString(cash));
+		System.out.println("-------------------------->"+b1.add(b2).doubleValue());*/
+		//System.out.println(Coder.formatStartDay("2016-07-15")+"~~~~~~"+Coder.formatEndDay("2016-08-08"));
+		
 	}
 }

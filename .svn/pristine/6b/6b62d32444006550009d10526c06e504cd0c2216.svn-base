@@ -1,0 +1,8 @@
+sendPayUrl = http://wgroup.easybao.com/entwechat/sendpayrecord.ext
+#1*60*1000
+payCheckTime = 60000
+mid_String = wechat
+agency_No = JC0000
+#60 * 60 * 24 * 30
+cookieMaxAge = 2592000
+jCAgency_No = JC0001

@@ -1,0 +1,70 @@
+package com.jc.ext;
+
+import java.io.IOException;
+import java.io.PrintWriter;
+
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.ibatis.session.SqlSession;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import com.jc.mybatis.domain.User;
+import com.jc.mybatis.mapper.UserMapper;
+import com.jc.util.Coder;
+import com.jc.util.MyBatisUtil;
+import com.jc.util.RsaUtil;
+
+@WebServlet("/QRCodeGetUserInfo.ext")
+public class QRCodeGetUserInfo extends HttpServlet{
+
+	/**
+	 * qianjia
+	 * 获取消费点二维码
+	 */
+	private static final long serialVersionUID = 1L;
+	
+	public void doPost(HttpServletRequest request,HttpServletResponse response) throws ServletException,IOException{
+		String userid=request.getParameter("userId");
+		JSONObject json=new JSONObject();
+		
+		try {
+			if (Coder.isNumeric(userid)) {
+				SqlSession session=MyBatisUtil.getSession();
+				UserMapper userMapper=session.getMapper(UserMapper.class);
+				User user=userMapper.selectByPrimaryKey(Integer.parseInt(userid));
+				session.close();
+				if(user!=null&&user.getUserid()!=null&&(user.getStatus().equals("1")||user.getStatus().equals("99"))){
+					json.put("flag", true);
+					json.put("name", user.getUsername());
+					json.put("id", user.getUserid());
+					json.put("mername", user.getMername());
+				}else{
+					json.put("flag", false);
+					json.put("desc", "无效消费点");
+				}
+				
+			}else{
+				json.put("flag", false);
+				json.put("desc", "错误的消费点ID");
+			}
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		String miwem="";
+		try {
+			miwem=RsaUtil.encryptByPrivateKeyseg(json.toString().getBytes(), RsaUtil.privateKey);//私钥加密
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		PrintWriter out = response.getWriter();
+		out.print(miwem);
+		out.close();
+	}
+
+}

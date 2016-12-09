@@ -1,0 +1,228 @@
+package com.jc.ext;
+
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.commons.io.IOUtils;
+import org.apache.ibatis.session.SqlSession;
+import org.apache.log4j.Logger;
+import org.json.JSONObject;
+
+import com.jc.mybatis.domain.ConLedger;
+import com.jc.mybatis.domain.Consume;
+import com.jc.mybatis.domain.User;
+import com.jc.mybatis.domain.UserExample;
+import com.jc.mybatis.mapper.ConLedgerMapper;
+import com.jc.mybatis.mapper.ConsumeMapper;
+import com.jc.mybatis.mapper.UserMapper;
+import com.jc.util.BaseUtil;
+import com.jc.util.Coder;
+import com.jc.util.ConfigByFile;
+import com.jc.util.MyBatisUtil;
+import com.jc.util.NoCardUtil;
+import com.jc.util.RsaUtil;
+
+/**
+ * 
+ * @author qianjia
+ * 2016.6.6
+ * 无卡消费线上扣费接口
+ *         
+ *
+ */
+@WebServlet("/webConsume.ext")
+public class WebConsume extends HttpServlet{
+	
+	private static final long serialVersionUID = 1L; 
+	private static Logger logger = Logger.getLogger(WebConsume.class);
+	@Override
+	protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+		String client = IOUtils.toString(req.getInputStream());
+		byte[] decodedData=null;
+		JSONObject jsonObject = new JSONObject();
+		String orderNo=Coder.getOrderNo();
+		double amount = 0;
+		String clientid="";
+		String loginname="test";
+		String business = "";
+		String userid = "";
+		String password = "";
+		JSONObject result = new JSONObject();
+		JSONObject sendres = new JSONObject();
+		Map<String, Object> xfget = new HashMap<String, Object>();;
+		String paytime=Coder.formatTime(new Date());
+		boolean flag=false;
+		String desc="";
+		String back="";
+		
+		try {
+			byte[] encodedData=Coder.parseHexStr2Byte(client);
+			decodedData = RsaUtil.decryptByPrivateKey(encodedData, RsaUtil.privateKey);
+			String jsonstr=new String(decodedData);
+			jsonObject = new JSONObject(jsonstr);
+			//获取参数
+			amount = jsonObject.getDouble("amount");
+			clientid = jsonObject.getString("clientid");
+			loginname = jsonObject.getString("loginname");
+			password = jsonObject.getString("password");
+			password=Coder.EncoderByMd5(password);
+		} catch (Exception e) {
+			logger.info("解密失败。。");
+		}
+		
+		SqlSession session = MyBatisUtil.getSession();
+		UserMapper mapper = session.getMapper(UserMapper.class);
+		UserExample example=new UserExample();
+		example.or().andLoginnameEqualTo(loginname);
+		User user = null;
+		example.setLimitStart(0);
+		example.setLimitSize(10);
+		List<User> uiUsers = mapper.selectByExample(example);
+		if(Coder.isListNotEmpty(uiUsers)){
+			user=uiUsers.get(0);
+		}
+		session.close();
+		if(user!=null&&user.getStatus().equals("99")&&user.getPassword().equals(password)){
+			if(amount>0){
+				business = user.getUsername();
+				userid = String.valueOf(user.getUserid());
+				int conflag=-1;
+	    		try {
+	    			logger.info("------->"+loginname+" 通过接口触发一卡通扣费："+"消费工号："+clientid+"消费金额："+amount);
+	    			xfget=NoCardUtil.PosGetXF(clientid, amount, business, orderNo,userid);//调用扣费接口
+	    			conflag=(Integer)xfget.get("conflag");
+	    			desc=(String)xfget.get("desc");
+	        		if(conflag==0){
+	        			flag=true;
+	        		}else{
+	        			flag=false;
+	        		}
+	        		
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}else{
+				flag=false;
+	        	desc="消费金额必须大于0";
+			}
+		}else{
+        	flag=false;
+        	desc="账户登录错误或该账户无法发起扣款";
+        }
+
+		
+		try {
+			sendres.put("userId", clientid);
+			sendres.put("date", paytime);
+			sendres.put("location", business);
+			sendres.put("gold", Double.valueOf((String)(xfget.get("gold")==null?"0.00":xfget.get("gold"))));
+			sendres.put("cash", Double.valueOf((String)(xfget.get("cash")==null?"0.00":xfget.get("cash"))));
+			sendres.put("status", flag);
+			//推送扣费结果	
+			String sendstr=RsaUtil.encryptByPrivateKeyseg(sendres.toString().getBytes(), RsaUtil.privateKey);
+			back = BaseUtil.sendPost(ConfigByFile.sendPayUrl, sendstr);
+		} catch (Exception e) {
+			logger.info("加密失败");
+			e.printStackTrace();
+		}
+		
+	
+		
+		String miwem="";
+		try {
+			result.put("flag", flag);
+			result.put("desc", desc);
+			byte[] data = result.toString().getBytes();
+			byte[] encodedData = RsaUtil.encryptByPrivateKey(data, RsaUtil.privateKey);
+			miwem=RsaUtil.parseByte2HexStr(encodedData);
+		} catch (Exception e) {
+			logger.info("加密失败");
+			e.printStackTrace();
+		}
+		PrintWriter out = resp.getWriter();
+		out.print(miwem);
+		out.close();
+		
+		
+		/**
+		 *保存消费历史 (包含现金明细)
+		 * */
+		session = MyBatisUtil.getSession();
+		try {
+			logger.info("---------------->接口消费本地记录存储开始");
+			ConsumeMapper mapper2 = session.getMapper(ConsumeMapper.class);
+			ConLedgerMapper conLedgerMapper=session.getMapper(ConLedgerMapper.class);
+			if(Double.valueOf((String) xfget.get("gold"))!=0){
+				if(flag){
+					Consume consume=new Consume();
+					consume.setOrderno(orderNo);
+					consume.setClientid(clientid);
+					consume.setMerchantid(user.getMerchantid());
+					consume.setCsmerchat(business);
+					consume.setMername(user.getMername());
+					consume.setCssum(Double.valueOf((String) xfget.get("gold")));
+					consume.setMaketime(paytime);
+					consume.setPushflag(back);
+					consume.setRemark(desc);
+					consume.setUserid(user.getUserid());
+					consume.setWallettype("7");//金诚币消费
+					consume.setClientname((String)xfget.get("clientname"));
+					consume.setCsstatus("1");
+					mapper2.insert(consume);
+				}
+			}
+			if(Double.valueOf((String)xfget.get("cash"))!=0){
+				if(flag){
+					Consume consume=new Consume();
+					consume.setOrderno(orderNo);
+					consume.setClientid(clientid);
+					consume.setMerchantid(user.getMerchantid());
+					consume.setCsmerchat(business);
+					consume.setMername(user.getMername());
+					consume.setCssum(Double.valueOf((String) xfget.get("cash")));
+					consume.setMaketime(paytime);
+					consume.setPushflag(back);
+					consume.setRemark(desc);
+					consume.setUserid(user.getUserid());
+					consume.setWallettype("8");//现金消费
+					consume.setClientname((String)xfget.get("clientname"));
+					consume.setCsstatus("1");
+					mapper2.insert(consume);
+					//明细储存现金消费
+					ConLedger conLedger=new ConLedger();
+					conLedger.setClientid(clientid);
+					conLedger.setClientname((String)xfget.get("clientname"));
+					conLedger.setCsmerchat(user.getUsername());
+					conLedger.setCsstatus("1");
+					conLedger.setMaketime(paytime);
+					conLedger.setMerchantid(user.getMerchantid());
+					conLedger.setMername(user.getMername());
+					conLedger.setOderno(orderNo);
+					conLedger.setWallettype("8");
+					conLedger.setUserid(user.getUserid());
+					conLedger.setAgencyno(ConfigByFile.agency_No);
+					conLedger.setCssum(Double.valueOf((String) xfget.get("cash")));
+					conLedgerMapper.insert(conLedger);
+				}
+			}
+			logger.info("------->"+loginname+" 存储扣费"+clientid+"工号："+amount+"元记录成功,提示信息："+desc);
+			
+		} catch (Exception e) {
+			logger.info("------->"+loginname+" 存储扣费"+clientid+"工号："+amount+"元记录失败：,提示信息："+desc+e);
+		}finally{
+			session.close();
+		}
+	}
+	
+	
+}

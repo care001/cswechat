@@ -1,0 +1,255 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="cn.com.goldfinance.mapper.wkxf.AccTransdetailMapper">
+
+	<select id="getAccTransdetailByEmpId" parameterType="string" resultType="cn.com.goldfinance.domain.wkxf.AccTransdetail">
+	select
+	    pos.Cardid as cardid,
+	    pos.Empid as empid,
+	    pos.Secid as secid,
+	    CONVERT(varchar(100), pos.Acctransday, 20)
+	     as acctransday,
+	    pos.Acctransseq as acctransseq,
+	    pos.Acctranstype as acctranstype,
+	    pos.Imoneyvalue as imoneyvalue,
+	    pos.Omoneyvalue as omoneyvalue,
+	    pos.Cardusenum as cardusenum,
+	    pos.devId as devId,
+	    pos.remark as remark,
+	    pos.oprtid as oprtid,
+	    pos.Cardmoneyvalue as cardmoneyvalue
+	from Pos_AccTransdetail pos
+	 	where pos.empId=#{empId}
+	</select>
+	<select id="getAccTransdetailByCoinPojo" parameterType="cn.com.goldfinance.domain.wkxf.CoinPojo" resultType="cn.com.goldfinance.domain.wkxf.AccTransdetail">
+	
+	<![CDATA[ 
+	select
+	    pos.Cardid as cardid,
+	    pos.Empid as empid,
+	    pos.Secid as secid,
+	    CONVERT(varchar(100), pos.Acctransday, 20)
+	     as acctransday,
+	    pos.Acctransseq as acctransseq,
+	    pos.Acctranstype as acctranstype,
+	    pos.Imoneyvalue as imoneyvalue,
+	    pos.Omoneyvalue as omoneyvalue,
+	    pos.Cardusenum as cardusenum,
+	     pos.devId as devId,
+	     pos.remark as remark,
+	     pos.oprtid as oprtid,
+	    pos.Cardmoneyvalue as cardmoneyvalue
+	from Pos_AccTransdetail pos
+	 	where (pos.empId=#{empId} and pos.devId<>999 and pos.Acctransday >=#{startTime} and pos.Acctransday <=#{endTime})
+	 	or (pos.empId=#{empId} and pos.devId is null and pos.Acctransday >=#{startTime} and pos.Acctransday <=#{endTime})
+	 	 order by pos.Acctransday desc
+	]]>
+	</select>
+	<select id="getAccTransdetailByMap" parameterType="java.util.Map" resultType="cn.com.goldfinance.domain.wkxf.AccTransdetail">
+	
+	
+	select
+		emp.empName as empname,
+		emp.empNo as empno,
+	    pos.Cardid as cardid,
+	    pos.Empid as empid,
+	    pos.Secid as secid,
+	    CONVERT(varchar(100), pos.Acctransday, 20)
+	     as acctransday,
+	    pos.Acctransseq as acctransseq,
+	    pos.Acctranstype as acctranstype,
+	    pos.Imoneyvalue as imoneyvalue,
+	    pos.Omoneyvalue as omoneyvalue,
+	    pos.Cardusenum as cardusenum,
+	     pos.devId as devId,
+	     pos.remark as remark,
+	     pos.oprtid as oprtid,
+	    pos.Cardmoneyvalue as cardmoneyvalue
+	from Pos_AccTransdetail pos,Hrms_Emp emp 
+		where 
+		emp.empId=pos.Empid 
+	 	<![CDATA[ and (pos.devId<>999 or pos.devId is null) ]]>
+	 	<![CDATA[ and (pos.oprtid<>37 or pos.oprtid is null) ]]>
+	 	<if test="empId != null and empId != ''" >
+	 	and pos.empId=#{empId} 
+	 	</if>
+	 	<if test="empName != null and empName != ''" >
+	 	and emp.empName=#{empName} 
+	 	</if>
+	 	<if test="startTime != null and startTime != ''" >
+	 	and pos.Acctransday <![CDATA[>=]]> #{startTime}
+	 	</if>
+	 	
+	 	<if test="endTime != null and endTime != ''" >
+	 	and pos.Acctransday <![CDATA[<=]]>#{endTime}
+	 	</if>
+	 	<if test="devIds != null and devIds != ''" >
+	 		and pos.devId in 
+	 	<foreach collection="devIds" item="devId" index="index"
+            open="(" close=")" separator=","> 
+			#{devId}  
+		</foreach>
+	 	
+	 	</if>
+	 	<if test="secids != null and secids != ''" >
+	 		and pos.Secid in 
+	 	<foreach collection="secids" item="secid" index="index"
+            open="(" close=")" separator=","> 
+			#{secid}  
+		</foreach>
+	 	
+	 	</if>
+	 	<if test="types != null and types != ''" >
+	 		and pos.Acctranstype in 
+	 	<foreach collection="types" item="type" index="index"
+            open="(" close=")" separator=","> 
+			#{type}  
+		</foreach>
+	 	
+	 	</if>
+	 	 order by pos.Acctransday desc
+
+	</select>
+	<select id="getInAndOutSumsByMap" parameterType="java.util.Map" resultType="java.util.Map">
+	
+	
+	select
+	    pos.SecId as secid,
+	    COALESCE(SUM(pos.Imoneyvalue),0) as insum,
+	    COALESCE(SUM(pos.Omoneyvalue),0) as outsum
+	    from Pos_AccTransdetail pos
+		where
+	 	<![CDATA[ (pos.devId<>999 or pos.devId is null) ]]>
+	 	<![CDATA[ and (pos.oprtid<>37 or pos.oprtid is null) ]]>
+	 	<if test="startTime != null and startTime != ''" >
+	 	and pos.Acctransday <![CDATA[>=]]> #{startTime}
+	 	</if>
+	 	<if test="endTime != null and endTime != ''" >
+	 	and pos.Acctransday <![CDATA[<=]]>#{endTime}
+	 	</if>
+	 	<if test="type != null and type != ''" >
+	 	and pos.Acctranstype = #{type}
+	 	</if>
+		GROUP BY pos.SecId
+	</select>
+	
+	<select id="getInAndOutSumByMap" parameterType="java.util.Map" resultType="java.util.Map">
+	select
+	    COALESCE(SUM(pos.Imoneyvalue),0) as insum,
+	    COALESCE(SUM(pos.Omoneyvalue),0) as outsum
+	    from Pos_AccTransdetail pos
+		where
+	 	<![CDATA[ (pos.devId<>999 or pos.devId is null) ]]>
+	 	<![CDATA[ and (pos.oprtid<>37 or pos.oprtid is null) ]]>
+	 	<if test="startTime != null and startTime != ''" >
+	 	and pos.Acctransday <![CDATA[>=]]> #{startTime}
+	 	</if>
+	 	<if test="endTime != null and endTime != ''" >
+	 	and pos.Acctransday <![CDATA[<=]]>#{endTime} 
+	 	</if>
+	 	<if test="type != null and type != ''" >
+	 	and pos.Acctranstype = #{type}
+	 	</if>
+		<if test="secid != null and secid != ''" >
+	 	and pos.secid = #{secid}
+	 	</if>
+	</select>
+	
+	<select id="getAccTransdetailLimitByMap" parameterType="java.util.Map" resultType="cn.com.goldfinance.domain.wkxf.AccTransdetail">
+		select
+		emp.empName as empname,
+		emp.empNo as empno,
+	    pos.Cardid as cardid,
+	    pos.Empid as empid,
+	    pos.Secid as secid,
+	    CONVERT(varchar(100), pos.Acctransday, 20)
+	     as acctransday,
+	    pos.Acctransseq as acctransseq,
+	    pos.Acctranstype as acctranstype,
+	    pos.Imoneyvalue as imoneyvalue,
+	    COALESCE(SUM(pos.Omoneyvalue),0) as omoneyvalue,
+	    pos.Cardusenum as cardusenum,
+	     pos.devId as devId,
+	     pos.remark as remark,
+	     pos.oprtid as oprtid,
+	    pos.Cardmoneyvalue as cardmoneyvalue   
+	from Pos_AccTransdetail pos,Hrms_Emp emp 
+		where 
+		emp.empId=pos.Empid 
+	 	<![CDATA[ and (pos.devId<>999 or pos.devId is null) ]]>
+	 	<![CDATA[ and (pos.oprtid<>37 or pos.oprtid is null) ]]>
+	 	<if test="startTime != null and startTime != ''" >
+	 	and pos.Acctransday <![CDATA[>=]]> #{startTime}
+	 	</if>
+	 	<if test="endTime != null and endTime != ''" >
+	 	and pos.Acctransday <![CDATA[<=]]>#{endTime}
+	 	</if>
+	 	<if test="devIds != null and devIds != ''" >
+	 		and pos.devId in 
+	 	<foreach collection="devIds" item="devId" index="index"
+            open="(" close=")" separator=","> 
+			#{devId}  
+		</foreach>
+	 	
+	 	</if>
+	 	<if test="limitsize!=null and limitsize != 0 and limitstart=null and limitstart!=0" >
+     		LIMIT #{limitstart} , #{limitsize}
+    	</if>
+	 	 order by pos.Acctransday desc
+
+	</select>
+	<select id="getAccTransdetailCountByMap" parameterType="java.util.Map" resultType="java.lang.Integer">
+		select count(*)
+		from Pos_AccTransdetail pos,Hrms_Emp emp 
+		where 
+		emp.empId=pos.Empid 
+	 	<![CDATA[ and (pos.devId<>999 or pos.devId is null) ]]>
+	 	<![CDATA[ and (pos.oprtid<>37 or pos.oprtid is null) ]]>
+	 	<if test="startTime != null and startTime != ''" >
+	 	and pos.Acctransday <![CDATA[>=]]> #{startTime}
+	 	</if>
+	 	<if test="endTime != null and endTime != ''" >
+	 	and pos.Acctransday <![CDATA[<=]]>#{endTime}
+	 	</if>
+	 	<if test="devIds != null and devIds != ''" >
+	 		and pos.devId in 
+	 	<foreach collection="devIds" item="devId" index="index"
+            open="(" close=")" separator=","> 
+			#{devId}  
+		</foreach>
+	 	
+	 	</if>
+
+
+	</select>
+	
+	
+	<select id="getFXZTByMap" parameterType="java.util.Map" resultType="cn.com.goldfinance.domain.wkxf.AccTransdetail">
+		
+	 	
+	 	
+	 	select
+	    pos.devId as devId,
+	    pos.Acctranstype as acctranstype,
+	    COALESCE(SUM(pos.Omoneyvalue),0) as omoneyvalue
+	    from Pos_AccTransdetail pos
+		where
+			pos.Acctranstype = 20
+	 	<![CDATA[ and (pos.devId<>999 or pos.devId is null) ]]>
+	 	<![CDATA[ and (pos.oprtid<>37 or pos.oprtid is null) ]]>
+	 	<if test="startTime != null and startTime != ''" >
+	 	and pos.Acctransday <![CDATA[>=]]> #{startTime}
+	 	</if>
+	 	<if test="endTime != null and endTime != ''" >
+	 	and pos.Acctransday <![CDATA[<=]]>#{endTime}
+	 	</if>
+	 	<if test="type != null and type != ''" >
+	 	and pos.Acctranstype = #{type}
+	 	</if>
+		GROUP BY pos.devId, pos.Acctranstype
+	 	 
+
+	</select>
+</mapper>

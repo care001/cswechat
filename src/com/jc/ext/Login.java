@@ -19,6 +19,7 @@ import com.jc.dao.UserMapper;
 import com.jc.entity.User;
 import com.jc.entity.UserExample;
 import com.jc.util.Coder;
+import com.jc.util.ConfigByFile;
 import com.jc.util.CookieUtil;
 import com.jc.util.MyBatisUtil;
 
@@ -32,7 +33,6 @@ public class Login extends HttpServlet{
 
 	private static final long serialVersionUID = -3692170308778424641L;
 	private static Logger logger = Logger.getLogger(Login.class);
-	private final static int cookieMaxAge = 60 * 60 * 24 * 30;
 	@Override
 	protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 		String name = req.getParameter("name");
@@ -53,7 +53,6 @@ public class Login extends HttpServlet{
 								name=cookies[i].getValue().split("-")[0];
 								pwd=cookies[i].getValue().split("-")[1];
 								hascook=true;
-								System.out.println("cookie:"+name+"&&&"+pwd);
 							}
 							
 						}
@@ -90,7 +89,7 @@ public class Login extends HttpServlet{
 					result.put("username", uiUser.getUsername());
 					if(!hascook){
 						Cookie cookie = new Cookie(CookieUtil.LOGINCOOK, name+"-"+pwd);
-						cookie.setMaxAge(cookieMaxAge);
+						cookie.setMaxAge(ConfigByFile.cookieMaxAge);
 						cookie.setPath("/");
 						resp.addCookie(cookie);	
 					}
@@ -105,8 +104,10 @@ public class Login extends HttpServlet{
 			}
 		} catch (Exception e) {
 			logger.info("login err:"+e);
+		}finally{
+			session.close();	
 		}
-		session.close();
+		
 		PrintWriter out = resp.getWriter();
 		out.print(result.toString());
 		out.close();

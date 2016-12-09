@@ -16,13 +16,14 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.log4j.Logger;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import com.jc.util.BaseUtil;
 
 /**
- * 
+ * 获取jssdk 调用微信扫一扫
  * @author 	qianjia
  * 2016.6.1
  */
@@ -30,23 +31,21 @@ import com.jc.util.BaseUtil;
 public class GetJSSDK extends HttpServlet{
 
 	private static final long serialVersionUID = 4689183699420922501L;
-	
+	private static Logger logger = Logger.getLogger(GetJSSDK.class);
 	
 	@Override
 	protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 		JSONObject result = new JSONObject();
+		//String url="http://wxcard.gold-finance.com.cn/jsp/confirmMoney.html";
+		String url=req.getParameter("jssdkurl");
+		logger.info("jssdk url:"+url);
 		String jssdk="";
 		jssdk=BaseUtil.getJsapiTicket();
-		String url = req.getRequestURL().toString();
-		url = req.getScheme() +"://" + req.getServerName() + req.getContextPath()+"/jsp/confirmMoney.html";
-		System.out.println("url:"+url);
-		//url="http://6ee31be9.ngrok.natapp.cn/jsp/sweepcode.jsp";
-	    Map<String, String> ret = sign(jssdk, url);
+		Map<String, String> ret = sign(jssdk, url);
 	    try {
 	    for (Map.Entry<String, String> entry : ret.entrySet()) {
 	        result.put(entry.getKey()+"", entry.getValue());
 	    }
-System.out.println(result.toString());
 		} catch (JSONException e) {
 			e.printStackTrace();
 		}
@@ -114,14 +113,5 @@ System.out.println(result.toString());
 	    private static String create_timestamp() {
 	        return Long.toString(System.currentTimeMillis() / 1000);
 	    }
-	  /*  private static String getUrl(){
-	        HttpServletRequest request = ServletActionContext.getRequest();
-	         
-	        StringBuffer requestUrl = request.getRequestURL();
-	         
-	        String queryString = request.getQueryString();
-	        String url = requestUrl +"?"+queryString;
-	        return url;
-	    }*/
 
 }

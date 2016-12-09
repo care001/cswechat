@@ -44,19 +44,22 @@ public class ConsumeSuc extends HttpServlet{
           }
           HttpSession httpsession = request.getSession();
           String sendverify=(String)httpsession.getAttribute("sendverify");
-          if (!"authdeny".equals(code)&&user!=null&&user.getUserid()>0&&paytime.equals(sendverify)) {
+          String verifytime=sendverify.split(",")[0];
+          String gold=sendverify.split(",")[1];
+          String cash=sendverify.split(",")[2];
+          if (!"authdeny".equals(code)&&user!=null&&user.getUserid()>0&&paytime.equals(verifytime)) {
         	  httpsession.setAttribute("sendverify", "");
         	  openid=GetOpenId.getOpenIdByCode(code);
         	  business=user.getUsername();
-        	  String content=business+"于 "+paytime+" 成功收款"+clientid+"员工:"+Double.valueOf(money)+"元。" ;
-        	  System.out.println(content);
+        	  String content=business+"于 "+paytime+" 成功收款"+clientid+"员工:"+Double.valueOf(money)+"元(金诚币:"+gold+"元,现金:"+cash+"元)。" ;
         	  SendMessage.sendTextMessageToUser(content, openid);
         	}else{     
               logger.info("就是不发提示消息，至于为什么，自己找原因。。。");  
           }  
           // 跳转到index.jsp
-          request.setAttribute("money", money);
-          request.getRequestDispatcher("jsp/receiveMoney.jsp").forward(request, response);  
+          /*request.setAttribute("money", money);
+          request.getRequestDispatcher("jsp/receiveMoney.jsp").forward(request, response);*/
+          response.sendRedirect("jsp/receiveMoney.jsp?money="+money);
         }
     	public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {    
     		doGet(request, response); 

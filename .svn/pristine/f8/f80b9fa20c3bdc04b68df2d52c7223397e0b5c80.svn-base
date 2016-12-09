@@ -1,0 +1,19 @@
+DROP TABLE IF EXISTS `cs_conledger`;
+CREATE TABLE `cs_conledger` (
+  `csid` int(12) unsigned NOT NULL AUTO_INCREMENT,
+  `oderno` varchar(20) DEFAULT NULL,
+  `clientid` varchar(12) NOT NULL,
+  `clientname` varchar(100) DEFAULT NULL,
+  `merchantid` int(12) NOT NULL,
+  `userid` int(12) NOT NULL,
+  `cssum` double(12,2) NOT NULL,
+  `csmerchat` varchar(100) DEFAULT NULL,
+  `mername` varchar(100) NOT NULL,
+  `csstatus` varchar(2) NOT NULL,
+  `wallettype` varchar(2) DEFAULT NULL,
+  `agencyno` varchar(10) DEFAULT NULL,
+  `remark` varchar(100) DEFAULT NULL,
+  `maketime` varchar(20) NOT NULL,
+  PRIMARY KEY (`csid`)
+) ENGINE=InnoDB AUTO_INCREMENT=140 DEFAULT CHARSET=utf8;
+ 

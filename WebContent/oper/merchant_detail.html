@@ -1,0 +1,369 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"　"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>金诚集团无卡消费后台管理系统</title>
+<link href="css/admin.css" rel="stylesheet" type="text/css" />
+<link rel="stylesheet" type="text/css" href="css/jcDate.css" media="all" />
+<script type="text/javascript" src="../js/jquery-1.9.1.min.js"></script> 
+<script src="../js/jquery.min.js" type="text/javascript"></script>
+<script type="text/javascript" src="../js/jQuery-jcDate.js" charset="utf-8"></script>
+<style>
+#account{width:200px;height:25px}
+</style>
+</head>
+
+<body>
+    <div class="bread">
+      <p class="breadNav">首页&nbsp; &gt; &nbsp;消费点</p>
+      <p class="lineBread"><img src="../images/lineBread.jpg" /></p>
+    </div>
+    <div class="content">
+      <div class="articleList">
+        <div class="search">消费记录查询：
+         
+开始时间:<input class="jcDate " id="start" style="width:200px; height:20px; line-height:20px; padding-left:4px;" />&nbsp;&nbsp;&nbsp;&nbsp;结束时间:<input class="jcDate " id="end" style="width:200px; height:20px; line-height:20px; padding-left:4px;" />  &nbsp;&nbsp;&nbsp;&nbsp;
+     <select id="cardsel">
+   		<option value="0">请选择商户</option>
+   </select>
+		
+		  <input type="submit" value="确定" class="btnBlue" id="search"/>
+		  <p class="starterr"></p><p class="enderr"></p><p class="accounterr"></p>
+          <div class="groupButtton">
+          	<button type="submit" class="addBtn"> 导出Excel</button>            
+          </div>
+		 
+		  <br/>
+		  
+		  
+		  <br/>
+        </div>
+        <table id="content" width="100%" cellspacing="1" cellpadding="0" border="0">
+          <thead>
+            <tr>            
+              <th width="12%" class="noLeftBorder">消费时间</th>
+              <th width="8%">消费账号</th>
+			  <th width="10%">姓名</th>
+			  <th width="10%">类型</th>
+			  <th width="10%">收入</th>
+			  <th width="10%">支出</th>
+			  <th width="10%">累计金额</th>
+			  <th width="8%">消费点(操作员)</th>
+			  <th width="8%">所属商户</th>
+              <th width="14%" class="noRightBorder">备注</th>
+            </tr>
+          </thead>
+          <tbody id="hisbody">
+         
+          </tbody>
+        </table>
+        <div class="listPage">
+			<a href="javascript:void(0);" id="firstbut">首页</a> 
+			<a href="javascript:void(0);" id="upbut">上一页</a> 
+			<a href="javascript:void(0);" id="downbut">下一页</a> 
+			<a href="javascript:void(0);" id="lastbut">尾页</a>&nbsp;&nbsp;
+			共<span id="pagesum">0</span>条，当前第<span id="pagenow">1</span>/<span id="pageall">1</span>页</div>
+      </div>
+    </div>
+</body>
+<script>
+var start;
+var end;
+//限制起止时间不能为空
+function check(){
+$(".starterr").text("");
+$(".enderr").text("");
+$(".accounterr").text("");
+	if($("#start").val()==""){
+		var errorMsg = '开始时间不能为空！';
+		$(".starterr").text(errorMsg);
+		return false;
+	}else{
+		$(".starterr").text("");
+	}
+	 if($("#end").val()==""){
+		var errorMsg = '结束时间不能为空！';
+		$(".enderr").text(errorMsg);
+		return false;
+	}else{
+		$(".enderr").text("");
+	}
+	 if($("#cardsel").val()==0){
+		var errorMsg = '请选择商户类型！';
+		$(".accounterr").text(errorMsg);
+		return false;
+	}else{
+		$(".accounterr").text("");
+	}
+	var startime=$("#start").val();
+	var endtime=$("#end").val();
+	var arrs = startime.split("-");
+	var arre = endtime.split("-");
+	startime = new Date(arrs[0],arrs[1],arrs[2]); 
+    endtime = new Date(arre[0],arre[1],arre[2]); 
+		if (startime<=endtime) { 
+			return  true; 
+	    }else{
+			var errorMsg = '开始时间不能大于结束时间！';
+			$(".starterr").text(errorMsg);
+			return  false; 
+	    }
+}
+ function post(URL, PARAMS) {
+	var temp = document.createElement("form");
+	temp.action = URL;
+	temp.method = "post";
+	temp.style.display = "none";
+	for (var x in PARAMS) {
+		var opt = document.createElement("textarea");
+		opt.name = x;
+		opt.value = PARAMS[x];
+		temp.appendChild(opt);
+	}
+	document.body.appendChild(temp);
+	temp.submit();
+	}
+$(".addBtn").click(function(){	
+ 	if(check()){
+		post('../manage/BuildWaterExcel.ext', {startday:start,endday:end,merchantid:$('#cardsel').val()});    
+    }  
+ });
+ $("#search").click(function(){
+// alert($("#cardsel").val())
+ if(check()){
+		var startTime = $("#start").val();
+		var endTime = $("#end").val();
+		start= gettime(startTime);
+		end= gettime(endTime);
+		
+		 $.ajax({ 
+                type: "post", 
+                dataType: 'json',
+                url: "../manage/GetWaterHis.ext",
+                data:{
+					"startday":start,
+					"endday":end,
+					"merchantid":$('#cardsel').val()
+                 },
+	           success: function(msg){
+			   		//alert( JSON.stringify(msg) )
+					if (msg.conssum==0){
+							$("#hisbody tr").remove();
+							$("#hisbody").append("<tr><td colspan='10'>没有查到数据</td></tr>");
+							$("#pagesum").html(msg.conssum);
+							$("#pageall").html(msg.pageall);
+							$("#pagenow").html(msg.pagenow);
+				   }else if(msg.conssum!==0){
+						$("#hisbody tr").remove();
+						for(var i=0;i<msg.consumes.length;i++){
+							var maketime=msg.consumes[i].maketime;
+							var clientid=msg.consumes[i].clientid;
+							var clientname=msg.consumes[i].clientname;
+							var Status=msg.consumes[i].csstatus;
+							var wallettype=msg.consumes[i].wallettype;
+							var sum=msg.consumes[i].cssum;
+							var consumption=msg.consumes[i].csmerchat;
+							var mername=msg.consumes[i].mername;
+							var remark=msg.consumes[i].remark;
+							var type;
+							var reduce;
+							var add;
+								if(Status==1||Status==20){
+									if(wallettype==5){
+										type="IC金诚币消费";
+										reduce=sum;
+										add="";
+									}else if(wallettype==6){
+										type="IC现金消费";
+										reduce=sum;
+										add="";
+									}else if(wallettype==7){
+										type="ID金诚币消费";
+										reduce=sum;
+										add="";
+									}else if(wallettype==8){
+										type="ID现金消费";
+										reduce=sum;
+										add="";
+									}
+								}else if(Status==2){
+									type="ID转IC";
+									reduce="";
+									add=sum;
+								}else if(Status==10){
+								    type="自动充值";
+                                    reduce="";
+									add=sum;
+								}else if(Status==11){
+									type="手工充值";
+									reduce="";
+									add=sum;
+								}else if(Status==12){
+									type="转帐收入";
+									reduce="";
+									add=sum;
+								}else if(Status==21){
+									type="退款支出";
+									reduce=sum;
+									add="";
+								}else if(Status==22){
+									type="销户支出";
+									reduce=sum;
+									add="";
+								}else if(Status==23){
+									type="转帐支出";
+									reduce=sum;
+									add="";
+								}else if(Status==24){
+									type="补帐消费";
+									reduce=sum;
+									add="";
+								}
+							
+							var $tr= $("<tr></tr>");
+							var $td1=$("<td>"+maketime+"</td>");
+							var $td2=$("<td>"+clientid+"</td>");
+							var $td3=$("<td>"+clientname+"</td>");
+							var $td4=$("<td>"+type+"</td>");
+							var $td5=$("<td>"+add+"</td>");
+							var $td6=$("<td>"+reduce+"</td>");
+							var $td7=$("<td>"+sum+"</td>");
+							var $td8=$("<td>"+consumption+"</td>");
+							var $td9=$("<td>"+mername+"</td>");
+							var $td10=$("<td>"+remark+"</td>");
+							
+							$tr.append($td1);
+							$tr.append($td2);
+							$tr.append($td3);
+							$tr.append($td4);
+							$tr.append($td5);
+							$tr.append($td6);
+							$tr.append($td7);
+							$tr.append($td8);
+							$tr.append($td9);
+							$tr.append($td10);
+							$("#hisbody").append($tr);
+							$("#pagesum").html(msg.conssum);
+							$("#pageall").html(msg.pageall);
+							$("#pagenow").html(msg.pagenow);
+							
+						}
+				    }
+				   doshow(1);
+			   },
+                error: function(data){
+                    alert("网络错误或未登陆,请重新登录");
+                }
+		  });
+	
+	}else{
+	
+	}
+});
+   
+//获取起止时间
+function gettime(time){
+ var date="";
+	 var  str = time.split("-");
+	 if (str[1].length==1){
+	 	if(str[2].length==1){
+	   		date=str[0]+'-'+"0"+str[1]+'-'+"0"+str[2];
+	    }else{
+	        date=str[0]+'-'+"0"+str[1]+'-'+str[2];
+	    }
+	  }
+	 if(str[1].length==2){
+	    if(str[2].length==1){
+	  		date=str[0]+'-'+str[1]+'-'+'0'+str[2];
+	    }else{
+	   		date=str[0]+'-'+str[1]+'-'+str[2];
+	    }
+	  }
+	 return date;
+}  
+  
+
+
+$(document).ready(function(){	
+//时间插件js
+	$("input.jcDate").jcDate({					       
+			IcoClass : "jcDateIco",
+			Event : "click",
+			Speed : 100,
+			Left : 0,
+			Top : 28,
+			format : "-",
+			Timeout : 100
+	});
+	
+	
+	 $.ajax({ 
+                type: "post", 
+                dataType: 'json',
+                url: "../manage/LeftManage.ext",
+				data:{
+					"merchantid":"allmer"
+                },
+	           success: function(msg){
+				  for(var i=0;i<msg.merchants.length;i++){
+					var name=msg.merchants[i].mername;
+					var id=msg.merchants[i].merchantid;
+					var $option=$("<option>"+name+"</option>");
+					$option.val(id);
+					$("#cardsel").append($option);
+				  }
+			   },
+                error: function(data){
+                    alert("网络错误或未登陆,请重新登录");
+                }
+	  });
+	
+});
+
+//首页
+$("#firstbut").click(function(){
+	doshow(1);
+	
+});
+
+//上一页
+$("#upbut").click(function(){
+	var pagenow=$("#pagenow").html();
+	if(pagenow==1){
+		alert("已经是第一页了");
+	}else{
+		var pageno=Number(pagenow)-1;
+		doshow(pageno);
+	}
+	
+});
+
+//下一页
+$("#downbut").click(function(){
+	var pagenow=$("#pagenow").html();
+	var pageall=$("#pageall").html();
+	if(pagenow==pageall){
+		alert("已经是最后一页了");
+	}else{
+		var pageno=Number(pagenow)+1;
+		doshow(pageno);
+	}
+});
+
+//尾页
+$("#lastbut").click(function(){
+	var pageall=$("#pageall").html();
+	doshow(pageall);
+
+});
+
+function doshow(pageno){
+		$("#hisbody tr").hide();
+		for(var i=(pageno-1)*10;i<pageno*10;i++){
+			$("#hisbody tr").eq(i).show();
+		}
+		$("#pagenow").html(pageno);
+}
+
+</script>
+</html>

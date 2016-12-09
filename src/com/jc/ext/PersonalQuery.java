@@ -137,8 +137,12 @@ public class PersonalQuery extends HttpServlet{
 						accTransdetail.setType("IC金诚币消费");
 					}else if(accTransdetail.getSecId().equals("6")){
 						accTransdetail.setType("IC现金消费");
+					}else if(accTransdetail.getSecId().equals("7")){
+						accTransdetail.setType("ID金诚币消费");
+					}else if(accTransdetail.getSecId().equals("8")){
+						accTransdetail.setType("ID现金消费");
 					}else{
-						accTransdetail.setType("IC消费");
+						accTransdetail.setType("消费");
 					}
 					
 					accTransdetail
@@ -225,9 +229,9 @@ public class PersonalQuery extends HttpServlet{
                 DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                 int tt=0;
                 try {
-					if (df.parse(time0).getTime() > df.parse(time1).getTime()) {  
+					if (df.parse(time1).getTime() > df.parse(time0).getTime()) {  
 						tt=1;  
-					} else if (df.parse(time0).getTime() > df.parse(time1).getTime()) {  
+					} else if (df.parse(time1).getTime() == df.parse(time0).getTime()) {  
 						tt=0;  
 					} else {  
 						tt=-1;  

@@ -1,0 +1,174 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=0">
+    <title>确认金额</title>
+    <link rel="stylesheet" type="text/css" href="css/weui.css"/>
+    <link rel="stylesheet" type="text/css" href="css/noCard.css"/>
+    <!-- <link rel="stylesheet" href="path/to/weui/dist/style/weui.min.css"/> -->
+    <style>
+	.f18{color:#666;}
+    #rmb{float:left;margin-top:-2rem}
+	#remarks{border-radius:0;border:none;border-top:1px solid #e5e3e3;height:2.5em;width:126%;line-height:2.5em;float:left;margin-left:-4rem;margin-bottom:-2em;margin-top:1.8rem;font-size:0.8em;padding:0.1rem}
+	
+	
+	</style>   
+</head>
+<body>
+<section class="confirmMoney">
+	<h2>欢迎使用金诚集团无卡消费系统！</h2>
+    <form id="confirmMoneyForm" name="confirmMoneyForm" method="post" action="">
+    	<div class="weui_cells_title f18"><strong>收款金额</strong></div>
+	    <div class="weui_cells weui_cells_form">
+		        <div class="weui_cell paddingTopBottom">
+		            <div class="weui_cell_hd"><label class="weui_label"><span class="font-label" id="rmb">￥</span></label></div>
+		            <div class="weui_cell_bd weui_cell_primary">
+		                	<input type="number" id="number" name="money" class="weui_input font-input" placeholder="0.00"/> 
+		                	 <input maxlength="20" type="text" id="remarks" class="weui_input font-input" placeholder="添加备注(20字内)"/>	
+		            </div>
+		        </div> 
+		        
+		            
+  	    </div>
+  	    <p id="errorInfo"></p>
+		<div class="btnWrap marginTop">
+		    <span  class="weui_btn weui_btn_primary" id="scanQRCode"><i class="icon_scan"></i>扫一扫收款</span>
+		</div> 
+    </form>
+</section>
+<div class="weui_dialog_alert" id="dialog">
+   <div class="weui_mask"></div>
+   <div class="weui_dialog">
+       <div class="weui_dialog_hd"><strong class="weui_dialog_title">扣费失败</strong></div>
+       <div class="weui_dialog_bd" id="dialogmsg">弹窗内容，告知当前页面信息等</div>
+       <div class="weui_dialog_ft">
+           <a href="#" class="weui_btn_dialog primary" id="diaclose">确定</a>
+       </div>
+   </div>
+</div>
+<div class="weui_dialog_alert" id="dialog2">
+   <div class="weui_mask"></div>
+   <div class="weui_dialog">
+       <div class="weui_dialog_hd"><strong class="weui_dialog_title">金额校验</strong></div>
+       <div class="weui_dialog_bd" id="dialogmsg">请输入小于100W最多两位小数的金额</div>
+       <div class="weui_dialog_ft">
+           <a href="#" class="weui_btn_dialog primary" id="diaclose2">确定</a>
+       </div>
+   </div>
+</div>
+<script src="http://res.wx.qq.com/open/js/jweixin-1.0.0.js"></script>
+<script src="js/jquery-1.9.1.min.js"></script>
+<script src="js/jquery.validate.js"></script>
+<script src="js/keyboard.js"></script>
+<script type="text/javascript">
+$(function() {
+
+
+
+
+$("#number").val("");
+
+
+
+$("#dialog").hide();
+$("#diaclose").click(function(){
+	$("#dialog").hide();
+});
+$("#dialog2").hide();
+$("#diaclose2").click(function(){
+	$("#dialog2").hide();
+});
+
+
+$.ajax({ 
+       type: "post", 
+       cache: false, 
+       dataType: 'json',
+       url: "../GetJSSDK.ext",
+       data:{
+
+        },
+		success: function(msg) {
+            wx.config({
+     		debug: false,
+      		appId: 'wx19f885b88db57ae4',
+      		timestamp: msg.timestamp,
+      		nonceStr: msg.nonceStr,
+      		signature: msg.signature,
+      		jsApiList: [
+      			'scanQRCode'
+      		]
+  			});
+       }       
+   });
+   	
+	
+});
+
+//+++++++++++微信调用扫一扫+++++++++++++++++++
+
+wx.ready(function () {
+
+function post(URL, PARAMS) {
+	var temp = document.createElement("form");
+	temp.action = URL;
+	temp.method = "post";
+	temp.style.display = "none";
+	for (var x in PARAMS) {
+		var opt = document.createElement("textarea");
+		opt.name = x;
+		opt.value = PARAMS[x];
+		temp.appendChild(opt);
+	}
+document.body.appendChild(temp);
+	temp.submit();
+} 
+
+  //扫描二维码并返回结果
+  document.querySelector('#scanQRCode').onclick = function () {
+  	var a=/^([0-9][\d]{0,5}|0)(\.[\d]{1,2})?$/;
+  	if(!a.test($("#number").val())||parseFloat($("#number").val())<=0){
+  		$("#dialog2").show();
+  		//alert("请输入正确的金额");
+  		return;
+  	}
+    wx.scanQRCode({
+      needResult: 1,
+      success: function (res) {
+        var client = res.resultStr;
+       	$.ajax({ 
+         type: "post", 
+                cache: false, 
+                dataType: 'json',
+                url: "../DoConsume.ext",
+                data:{
+					money:$("#number").val(),
+					client:client,
+					remark:$("#remarks").val()
+                 },
+				success: function(msg) {
+					if(msg.flag==true){
+                   		post('https://open.weixin.qq.com/connect/oauth2/authorize?appid=wx19f885b88db57ae4&redirect_uri=http%3A%2F%2Fwxqj.gold-finance.com.cn%2FConsumeSuc.ext&response_type=code&scope=snsapi_base&state='+msg.orderNo+'#wechat_redirect', {}); 
+                   	}else{
+                   		$("#dialogmsg").html(msg.desc);
+                   		$("#dialog").show();
+                   		//alert(msg.desc);
+                   	}
+  		          }       
+           });
+        
+      }
+    }); 
+  };
+
+
+});
+
+
+
+</script>
+
+<script src="js/zepto.min.js"></script>
+
+</body>
+</html>

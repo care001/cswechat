@@ -1,0 +1,511 @@
+package com.jc.util;
+
+import java.math.BigDecimal;
+import java.sql.CallableStatement;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Types;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.ibatis.session.SqlSession;
+import org.apache.log4j.Logger;
+
+import cn.com.goldfinance.domain.wkxf.AccHead;
+import cn.com.goldfinance.domain.wkxf.AccHeadPojo;
+import cn.com.goldfinance.domain.wkxf.AccTransdetail;
+import cn.com.goldfinance.domain.wkxf.Emp;
+import cn.com.goldfinance.domain.wkxf.GrpPutMoney;
+import cn.com.goldfinance.domain.wkxf.PutMoney;
+import cn.com.goldfinance.domain.wkxf.TopUp;
+import cn.com.goldfinance.mapper.wkxf.AccHeadMapper;
+import cn.com.goldfinance.mapper.wkxf.AccTransdetailMapper;
+import cn.com.goldfinance.mapper.wkxf.EmpMapper;
+import cn.com.goldfinance.mapper.wkxf.GrpPutMoneyMapper;
+import cn.com.goldfinance.mapper.wkxf.HrmsEmpMapper;
+import cn.com.goldfinance.mapper.wkxf.PutMoneyMapper;
+
+import com.jc.mybatis.domain.ConLedger;
+import com.jc.mybatis.domain.ConLedgerExample;
+import com.jc.mybatis.domain.User;
+import com.jc.mybatis.mapper.ConLedgerMapper;
+import com.jc.mybatis.mapper.UserMapper;
+
+public class NoCardUtil {
+	private static JDBCUtil jdbcUtil=JDBCUtil.getInstance();
+	private static Logger logger = Logger.getLogger(NoCardUtil.class);
+	private static String COMPANY_SECID="5"; 
+	private static String PERSON_SECID="6";
+
+	/*
+	 * 无卡ID消费**/
+	public static Map<String, Object> PosGetXF(String clientid,double amount,String business,String orderNo,String userid){
+		Map<String, Object> map=new HashMap<String, Object>();
+		List<TopUp> topUps=new ArrayList<TopUp>();
+		Connection con=null;
+		SqlSession session = MyBatisUtil.getwkxfSession();
+		HrmsEmpMapper hrmsEmpMapper = session.getMapper(HrmsEmpMapper.class);
+		SqlSession mysql=MyBatisUtil.getSession();
+		ConLedgerMapper conLedgerMapper=mysql.getMapper(ConLedgerMapper.class);
+		ConLedgerExample conLedgerExample=new ConLedgerExample();
+		conLedgerExample.or().andOdernoEqualTo(orderNo);
+		int conflag=-10;
+		try {
+			int cardId=getUsableCardId(clientid);
+			String empName=hrmsEmpMapper.getEmpNameByEmpNo(clientid);
+			session.close();
+			map.put("clientname", empName);
+			double balance=PosMoney(cardId, 7);
+			con=jdbcUtil.getConnection();
+			con.setAutoCommit(false);
+			if(balance>=amount){//id金诚币余额足够支付
+				topUps=getMoneyOrderList(clientid,amount,balance);
+				conflag=PosXF(cardId, amount, business, userid, 7 , con);
+				map.put("gold", String.valueOf(amount));
+	    		map.put("cash", "0.0");	
+				if(conflag==0){//消费成功后保存消费明细
+	    			boolean saveok = saveLogs(topUps, clientid, empName, amount, balance, orderNo, Integer.parseInt(userid));
+	    			if(!saveok){
+	    				conflag=-9;
+	    			}
+	    		}
+			}else {//id金诚币余额不足够支付
+				double balance2=PosMoney(cardId, 8);
+				BigDecimal b1 = new BigDecimal(Double.toString(balance));
+		        BigDecimal b2 = new BigDecimal(Double.toString(balance2));
+		        BigDecimal b3 = new BigDecimal(Double.toString(amount));
+		        double balsum= b1.add(b2).doubleValue();
+		        double poor= b3.subtract(b1).doubleValue();
+				if(balsum>=amount){//id现金和金诚币足够支付
+					
+					if(balance>0){
+						topUps=getMoneyOrderList(clientid,amount,balance);
+						conflag=PosXF(cardId, balance, business, userid, 7 , con);//消费全部金诚币	
+					}else{
+						conflag=0;
+					}
+					if(conflag==0){//id金诚币消费成功后 消费id现金
+		    			conflag=-10;
+		    			conflag=PosXF(cardId, poor, business, userid, 8 , con);//剩下的消费现金
+			    		map.put("gold", String.valueOf(balance));
+			    		map.put("cash", String.valueOf(poor));
+		    		}
+		    		if(conflag==0&&balance>0){//消费成功后保存消费明细
+		    			boolean saveok = saveLogs(topUps, clientid, empName, amount, balance, orderNo, Integer.parseInt(userid));
+		    			if(!saveok){
+		    				conflag=-9;
+		    			}
+		    		}
+				}else{//id现金和金诚币都不够支付
+					map.put("gold", String.valueOf(amount));
+	    			map.put("cash", "0.0");
+					map.put("conflag", -1);
+					map.put("desc", "余额不足");
+					logger.info("余额不足。。");
+				}
+	    		
+			}
+			if(conflag==0){//数据库修改成功，支付成功
+				con.commit();
+				map.put("conflag", 0);
+				map.put("desc", "成功支付");
+				logger.info("--------->"+clientid+"一卡通系统扣费"+amount+"成功");
+			}else{
+				con.rollback();
+				conLedgerMapper.deleteByExample(conLedgerExample);
+				if(conflag!=-10){//有进行数据库操作，但操作失败
+					map.put("conflag", -1);
+					map.put("desc", "数据库修改失败, 返回:"+conflag);
+					logger.info("数据库修改失败，数据已回滚..返回标志："+conflag);
+				}
+			}
+		} catch (Exception e) {
+			logger.info(e);
+			try {
+				if (con!=null) {
+					con.rollback();
+				}
+				conLedgerMapper.deleteByExample(conLedgerExample);
+				map.put("gold", String.valueOf(amount));
+	    		map.put("cash", "0.0");
+				map.put("conflag", -1);
+				map.put("desc", "数据库修改出错");
+				logger.info("数据库修改出错，数据已回滚..");
+				return map;
+			} catch (SQLException e1) {
+				e1.printStackTrace();
+			}
+			e.printStackTrace();
+			
+		}finally{
+			mysql.close();
+			jdbcUtil.free(con, null, null);
+		}
+		return map;
+	}
+	
+	
+	
+	/*
+	 * C3 ID消费**/
+	public static int PosXF(int cardId , double amount , String business , String userid ,int secid , Connection con){
+		int conflag=-10;
+		try {
+			CallableStatement ca =con.prepareCall("{? = call up_PosGetXF(?,?,?,?,?,?,?,?,?)}");
+			ca.registerOutParameter(1, Types.INTEGER);//返回 0成功 100重复数据
+    		ca.setInt(2,cardId);//卡流水号
+    		ca.setInt(3,secid);//钱包
+    		ca.setDouble(4,amount);//消费金额
+    		ca.setString(5,business);//商户名称（消费去向）
+    		ca.setInt(6,38);//操作员id
+    		ca.setString(7,userid);//电脑名称
+    		ca.setString(8,"weixin");//电脑用户名称
+    		ca.setInt(9,10);//消费方式 10-第三方
+    		ca.setInt(10,0);//IC钱包
+    		ca.execute();
+    		conflag=ca.getInt(1);
+    		ca.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}finally{
+			jdbcUtil.free(con, null, null);
+		}
+		return conflag;
+	}
+	/*
+	 * ID余额获取**/
+	public static double PosMoney(int cardid ,int secid){
+		Connection con=null;
+		double balance=0;
+		try {
+			con=jdbcUtil.getConnection();
+    		CallableStatement ca=con.prepareCall("{call up_PosMoney(?,?)}");
+    		ca.setInt(1,cardid);
+    		ca.setInt(2,secid);
+    		ca.execute();
+    		ResultSet rs = ca.getResultSet();
+    		if (rs.next()) {
+    			balance=rs.getDouble(1);
+			}
+    		con.close();
+    		ca.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}finally{
+			jdbcUtil.free(con, null, null);
+		}
+		return balance;
+	}
+	 
+	/*
+	 * IC余额**/
+	public static Map<String, Double> getICBalance(String empno){
+		Map<String, Double> ic=new HashMap<String, Double>();
+		SqlSession session = MyBatisUtil.getwkxfSession();
+		EmpMapper empMapper = session.getMapper(EmpMapper.class);
+		AccHeadMapper accHeadMapper = session.getMapper(AccHeadMapper.class);
+		AccTransdetailMapper accTransdetailMapper = session.getMapper(AccTransdetailMapper.class);
+		
+		GrpPutMoneyMapper grpPutMoneyMapper = session.getMapper(GrpPutMoneyMapper.class);
+		PutMoneyMapper putMoneyMapper = session.getMapper(PutMoneyMapper.class);
+		Emp emp = empMapper.getEmpByEmpNo(empno);
+		double total = 0;
+		double total1 = 0;
+		double total2 = 0;
+		double ntotal1 = 0;
+		double ntotal2 = 0;
+		int maxcardID=0;
+		int max1=0;
+		int max2=0;
+		if (emp != null) {
+			List<AccTransdetail> list = accTransdetailMapper
+					.getAccTransdetailByEmpId(emp.getEmpId());
+			if(Coder.isListNotEmpty(list)){
+				for (AccTransdetail accTransdetail : list) {
+					if(Integer.parseInt(accTransdetail.getCardId())>maxcardID){
+						maxcardID=Integer.parseInt(accTransdetail.getCardId());
+					}
+				}
+				for (AccTransdetail accTransdetail : list) {
+					if(accTransdetail.getCardId().equals(maxcardID+"")){
+						if(accTransdetail.getSecId().equals("5")){
+							if(Integer.parseInt(accTransdetail.getCardusenum()) >=max1){
+								max1=Integer.parseInt(accTransdetail.getCardusenum());
+								total1=Double.parseDouble(accTransdetail.getCardmoneyvalue());
+							}
+						}
+						if(accTransdetail.getSecId().equals("6")){
+							if(Integer.parseInt(accTransdetail.getCardusenum()) >=max2){
+								max2=Integer.parseInt(accTransdetail.getCardusenum());
+								total2=Double.parseDouble(accTransdetail.getCardmoneyvalue());
+							}
+						}
+					}
+					
+				}
+			}else{
+				AccHeadPojo accHeadPojo2=new AccHeadPojo();
+				accHeadPojo2.setSecId(PERSON_SECID);
+				accHeadPojo2.setEmpId(emp.getEmpId());
+				List<PutMoney> liPut =putMoneyMapper.getGrpPutMoneyByAccHeadPojo(accHeadPojo2);
+				for(PutMoney putMoney:liPut){
+					if(Integer.parseInt(putMoney.getCardUseNum()) >=max1){
+						max1=Integer.parseInt(putMoney.getCardUseNum());
+						total1=Double.parseDouble(putMoney.getCardMoneyAfter());
+					}
+				}
+			}
+			AccHeadPojo accHeadPojo=new AccHeadPojo();
+			accHeadPojo.setSecId(COMPANY_SECID);
+			accHeadPojo.setEmpId(emp.getEmpId());
+			List<AccHead> listaccHead =accHeadMapper.getAccHeadByAccHeadPojo(accHeadPojo);
+			if(listaccHead.size() >0){
+					for(AccHead accHead:listaccHead){
+						List<GrpPutMoney> liGrp =grpPutMoneyMapper.getGrpPutMoneyByAccountno(accHead.getAccountno());
+						for(GrpPutMoney grpPutMoney:liGrp){
+							if(grpPutMoney.getActPutMoneyValue()==null){
+								ntotal1=new BigDecimal(Double.toString(ntotal1)).add(new BigDecimal(grpPutMoney.getPlanPutMoneyValue())).doubleValue();
+							}
+						}
+					}
+					
+					
+			}
+			/**
+			 * 新增 未激活ic余额
+			 * 2061.7.18 qj
+			 * start*/
+			ntotal2=ntotal1;
+			AccHeadPojo accHeadPojo2=new AccHeadPojo();
+			accHeadPojo2.setSecId(PERSON_SECID);
+			accHeadPojo2.setEmpId(emp.getEmpId());
+			List<AccHead> listaccHead2 =accHeadMapper.getAccHeadByAccHeadPojo(accHeadPojo2);
+			if(listaccHead2.size() >0){
+					for(AccHead accHead:listaccHead2){
+						List<GrpPutMoney> liGrp =grpPutMoneyMapper.getGrpPutMoneyByAccountno(accHead.getAccountno());
+						for(GrpPutMoney grpPutMoney:liGrp){
+							if(grpPutMoney.getActPutMoneyValue()==null){
+								ntotal2=new BigDecimal(Double.toString(ntotal2)).add(new BigDecimal(grpPutMoney.getPlanPutMoneyValue())).doubleValue();
+							}
+						}
+					}
+					
+					
+			}
+			/**
+			 * 新增 未激活ic余额
+			 * 2061.7.18 qj
+			 * end*/
+			
+			//total=total1+total2+ntotal1;
+			total=new BigDecimal(Double.toString(total1)).add(new BigDecimal(Double.toString(total2))).add(new BigDecimal(Double.toString(ntotal2))).doubleValue();
+			
+		} else {
+			total=0.0;
+			ntotal2=0.0;
+		}
+		ic.put("total", total);
+		ic.put("ntotal", ntotal2);
+		session.close();
+		return ic;
+	}
+	
+	/*
+	 * ID转IC**/
+	public static Map<String, Object> ICToID(String clientid,double amount){
+		Map<String, Object> map=new HashMap<String, Object>();
+		double ICBalance=getICBalance(clientid).get("total");
+		if(new BigDecimal(Double.toString(ICBalance)).add(new BigDecimal(Double.toString(amount))).doubleValue()>5000){//ic卡不能超过5000
+			map.put("gold", String.valueOf(amount));
+    		map.put("cash", "0.0");
+			map.put("conflag", -1);
+			map.put("desc", "IC余额不能超过5000");
+			logger.info(clientid+"：IC余额不能超过5000");
+			return map;
+		}else{
+			Connection con=null;
+			CallableStatement ca=null;
+			SqlSession session = MyBatisUtil.getwkxfSession();
+			HrmsEmpMapper hrmsEmpMapper = session.getMapper(HrmsEmpMapper.class);
+			
+			int conflag=-10;
+			try {
+				int cardId=getUsableCardId(clientid);
+				String empName=hrmsEmpMapper.getEmpNameByEmpNo(clientid);
+				map.put("clientname", empName);
+				double balance=PosMoney(cardId, 8);//获取现金余额
+				con=jdbcUtil.getConnection();
+				con.setAutoCommit(false);
+				if(balance>=amount){
+					ca =con.prepareCall("{? = call up_PosGetXF(?,?,?,?,?,?,?,?,?)}");
+					ca.registerOutParameter(1, Types.INTEGER);//返回 0成功 100重复数据
+		    		ca.setInt(2,cardId);//卡流水号
+		    		ca.setInt(3,8);//钱包
+		    		ca.setDouble(4,amount);//消费金额
+		    		ca.setString(5,"ID现金转入");//商户名称（消费去向）
+		    		ca.setInt(6,37);//操作员id
+		    		ca.setString(7,clientid);//电脑名称
+		    		ca.setString(8,"weixin");//电脑用户名称
+		    		ca.setInt(9,20);//消费方式 20-转账
+		    		ca.setInt(10,6);//IC钱包
+		    		ca.execute();
+		    		conflag=ca.getInt(1);
+		    		map.put("cash", String.valueOf(amount));
+		    		map.put("gold", "0.0");
+				}else {
+					map.put("cash", String.valueOf(amount));
+	    			map.put("gold", "0.0");
+					map.put("conflag", -1);
+					map.put("desc", "余额不足");
+				}
+				if(conflag==0){
+					con.commit();
+					map.put("conflag", 0);
+					map.put("desc", "成功转账");
+				}else{
+					con.rollback();
+					if(conflag!=-10){
+						map.put("conflag", -1);
+						map.put("desc", "数据库修改失败, 返回:"+conflag);
+						logger.info("数据库修改失败，数据已回滚..返回标志："+conflag);
+					}
+				}
+			} catch (Exception e) {
+				try {
+					if (con!=null) {
+						con.rollback();
+					}
+					map.put("conflag", -1);
+					map.put("desc", "数据库修改出错");
+					logger.info("数据库修改出错，数据已回滚..");
+					return map;
+				} catch (SQLException e1) {
+					e1.printStackTrace();
+				}
+				e.printStackTrace();
+				
+			}finally{
+				session.close();
+				try {
+					if (ca!=null) {
+						ca.close();
+					}
+					jdbcUtil.free(con, null, null);
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+				
+			}
+		}
+		return map;
+	}
+	
+	/**获取有效的cardid*/
+	public static int getUsableCardId(String empNo){
+		int cardId=0;
+		SqlSession session = MyBatisUtil.getwkxfSession();
+		HrmsEmpMapper hrmsEmpMapper = session.getMapper(HrmsEmpMapper.class);
+		cardId=hrmsEmpMapper.getMaxCardIDByEmpNo(empNo);
+		if(cardId==0){
+			cardId=hrmsEmpMapper.getMaxCardIDByEmpNo(empNo);
+		}
+		session.close();
+		return cardId;
+	}
+	
+	/**根据先进先出原理 获取未消费的充值记录*/
+	public static List<TopUp> getMoneyOrderList(String clientid,double amount,double balance){
+		Map<String, Object> sermap=new HashMap<String, Object>();
+		List<AccTransdetail> accTransdetails=new ArrayList<AccTransdetail>();//充值记录
+		List<TopUp> nopays=new ArrayList<TopUp>();//未消费充值记录
+		double topUpSum=0;
+		
+		SqlSession session = MyBatisUtil.getwkxfSession();
+		AccTransdetailMapper accTransdetailMapper = session.getMapper(AccTransdetailMapper.class);
+		EmpMapper empMapper = session.getMapper(EmpMapper.class);
+		Emp emp = empMapper.getEmpByEmpNo(clientid);
+		//start C3金诚币充值记录
+		sermap.put("empId", emp.getEmpId());
+		List<Integer> types=new ArrayList<Integer>();
+		types.add(10);
+		types.add(11);
+		sermap.put("types", types);
+		List<Integer> secids=new ArrayList<Integer>();
+		secids.add(7);
+		sermap.put("secids",secids);
+		accTransdetails = accTransdetailMapper
+				.getAccTransdetailByMap(sermap);
+		//Collections.reverse(accTransdetails);
+		session.close();
+		//end C3金诚币充值记录
+		for (int i= 0; topUpSum<balance; i++) {
+			TopUp topUp=new TopUp();
+			AccTransdetail accTransdetail=accTransdetails.get(i);
+			topUpSum=Double.valueOf(accTransdetail.getImoneyvalue())+topUpSum;
+			topUp.setMakeTime(accTransdetail.getAcctransday());  
+			if(accTransdetail.getRemark().contains("#")&&accTransdetail.getRemark().split("#").length>0){//取发行主体
+				topUp.setAgencyNo(accTransdetail.getRemark().split("#")[0].trim());
+			}else{
+				topUp.setAgencyNo(ConfigByFile.jCAgency_No);//处理历史遗留无发行主体的充值记录
+			}
+			if(topUpSum<balance){
+				topUp.setMoney(Double.valueOf(accTransdetail.getImoneyvalue()));
+				nopays.add(topUp);
+			}else{
+				topUp.setMoney(balance-(topUpSum-Double.valueOf(accTransdetail.getImoneyvalue())));
+				nopays.add(topUp);
+			}
+			
+		}
+		Collections.reverse(nopays);
+		return nopays;
+	}
+	
+	/**根据先进先出原理 储存单笔带发行主体消费明细（金诚币）*/
+	public static boolean saveLogs(List<TopUp> topUps,String clientid,String clientname,double amount,double balance,String orderNo,int userid){
+		ConLedger conLedger=new ConLedger();
+		String paytime=Coder.formatTime(new Date());
+		double haspay=0;
+		SqlSession session=MyBatisUtil.getSession();
+		UserMapper userMapper=session.getMapper(UserMapper.class);
+		ConLedgerMapper conLedgerMapper=session.getMapper(ConLedgerMapper.class);
+		User user=userMapper.selectByPrimaryKey(userid);
+		
+		conLedger.setClientid(clientid);
+		conLedger.setClientname(clientname);
+		conLedger.setCsmerchat(user.getUsername());
+		conLedger.setCsstatus("1");
+		conLedger.setMaketime(paytime);
+		conLedger.setMerchantid(user.getMerchantid());
+		conLedger.setMername(user.getMername());
+		conLedger.setOderno(orderNo);
+		conLedger.setWallettype("7");
+		conLedger.setUserid(user.getUserid());
+		if(Coder.isListNotEmpty(topUps)){
+			for(int i=0;(haspay<amount&&haspay<balance);i++){
+				TopUp topUp=topUps.get(i);
+				if(topUp.getMoney()>=(amount-haspay)){
+					conLedger.setAgencyno(topUp.getAgencyNo());
+					conLedger.setCssum(new BigDecimal(amount).subtract(new BigDecimal(haspay)).doubleValue());
+					conLedgerMapper.insert(conLedger); 
+				}else{
+					conLedger.setAgencyno(topUp.getAgencyNo());
+					conLedger.setCssum(topUp.getMoney());
+					conLedgerMapper.insert(conLedger);
+				}
+				haspay=new BigDecimal(haspay).add(new BigDecimal(topUp.getMoney())).doubleValue();
+			}
+		}
+		
+		session.close();
+		return true;
+	}
+	public static void main(String[] args) {
+		System.out.println(getUsableCardId("0001866"));
+	}
+}

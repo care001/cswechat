@@ -1,0 +1,318 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"　"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>金诚集团无卡消费后台管理系统</title>
+<link href="css/admin.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="../js/jquery-1.9.1.min.js"></script> 
+<style>
+span{font-size:14px;}
+#dialog { height:460px;}
+#consume{margin-left:50px}
+#consume input{margin-top:15px;}
+#err{color:#FF0000;font-size:14px;margin-left:50px}
+</style>
+</head>
+
+<body>
+    <div class="bread">
+      <p class="breadNav">首页&nbsp; &gt; &nbsp;管理员信息</p>
+      <p class="lineBread"><img src="../images/lineBread.jpg" /></p>
+    </div>
+    <div class="content">
+      <div class="articleList">
+	   <div class="search">
+          <div class="groupButtton">
+          	<button type="submit" class="addBtn">添加消费点</button>            
+          </div>
+        </div>
+        <table width="100%" cellspacing="1" cellpadding="0" border="0">
+          <thead>
+            <tr>
+              <th width="15%" class="noLeftBorder">名称</th>
+              <th width="9%">账号</th>
+              <th width="7%">密码</th>
+              <th width="9%" class="noRightBorder">联系人</th>
+			  <th width="20%">联系电话</th>
+			  <th width="30%">联系地址</th>
+			  <th width="10%">收款二维码</th>
+			  
+            </tr>
+          </thead>
+          <tbody id="users">
+                 
+          </tbody>
+        </table>
+        <div class="listPage"><a href="javascript:void(0);" id="firstbut">首页</a> <a href="javascript:void(0);" id="upbut">上一页</a> <a href="javascript:void(0);" id="downbut">下一页</a> <a href="javascript:void(0);" id="lastbut">尾页</a>&nbsp;&nbsp;共<span id="pagesum">0</span>条，当前第<span id="pagenow">1</span>/<span id="pageall">1</span>页</div>
+      </div>
+    </div>
+<div id="fullbg"></div>
+<div id="dialog"> 
+     <img class="delete" src="../images/iconDelete.png">	 
+<div class="dialogcon">
+<div id="errorInfo"></div>
+			<div id="name">名称:&nbsp;&nbsp;<input class="inputclass" type="text" name="fname" id="name1" placeholder="请输入名称"/></div>
+			<div id="fnum">账号:&nbsp;&nbsp;<input class="inputclass" type="text" name="fnum" id="fnum1" value="" placeholder="请输入账号"/></div>	
+			<div id="psw">密码:&nbsp;&nbsp;<input class="inputclass" type="password" name="psw" id="password" value="" placeholder="请输入密码"/></div>
+			<div id="consume"><p>姓名:&nbsp;&nbsp;<input class="inputclass" type="text" name="contact" id="contact" value="" placeholder="请输入消费点联系姓名人"/></p>
+			                  <p>电话:&nbsp;&nbsp;<input class="inputclass" type="text" name="tel" id="phone" value="" placeholder="请输入消费点联系人电话"/></p>
+			                  <p>地址:&nbsp;&nbsp;<input class="inputclass" type="text" name="address" id="address" value="" placeholder="请输入消费点地址"/></p></div>
+</div>
+<span id="err"></span>
+	<div><input type="button" value="添加" id="addbutton"/></div>
+	
+</div> 
+<script>
+function checktwo(){
+	$("#err").text("");
+	if($("#name1").val().length>30){
+		$("#err").text("名称长度不能超过30");
+		return false;
+	}else{
+		$("#err").text("");
+	}
+	if($("#contact").val().length>30){
+		$("#err").text("联系人长度不能超过30");
+		return false;
+	}else{
+		$("#err").text("");
+	}
+	if($("#phone").val().length>25){
+		$("#err").text("电话号码长度不能超过30");
+		return false;
+	}else{
+		$("#err").text("");
+	}
+	if($("#address").val().length>25){
+		$("#err").text("地址长度不能超过30");
+		return false;
+	}else{
+		$("#err").text("");
+		return true;
+	}
+}
+function checkthree(){
+	if(checktwo()){
+		$("#err").text("");
+		var reg=/^[a-z0-9]+$/;
+		if(reg.test($("#fnum1").val())){
+			if($("#fnum1").val().length>25){
+				$("#err").text("账号长度不能超过25");
+				return false;
+			}else{
+				$("#err").text("");
+			}
+		}else{
+			$("#err").text("账号只能输入小写英文和数字");
+			return false;
+		}
+		if($("#password").val().length>25){
+			$("#err").text("密码长度不能超过25");
+			return false;
+		}else{
+			$("#err").text("");
+			return true;
+		}
+	}else{
+	}
+	
+}
+//显示灰色 jQuery 遮罩层 
+$(".addBtn").click(function(){
+	  	var bh = window.screen.height; 
+		var bw = window.screen.width; 
+		$("#fullbg").css({ 
+		height:bh, 
+		width:bw, 
+		display:"block" 
+		});
+		$(".inputclass").val(""); 
+		$("#dialog").show(); 
+});
+//关闭灰色罩层
+$(".delete").click(function(){
+	$("#fullbg,#dialog").hide();
+});
+
+$(function(){
+ $.ajax({ 
+         type: "post", 
+                cache: false, 
+                dataType: 'json',
+                url: "UserListByBus.ext",
+                data:{
+					pageno:1
+                 },
+				success: function(msg) {
+                   if (msg.usersum=='0') {
+                   		$("#users").find("tr").remove();
+                      	$("#users").append("<tr><td colspan='7'>没有查到数据</td></tr>");
+                      	$("#pagesum").html(msg.usersum);
+                      	$("#pageall").html(msg.pageall);
+                      	$("#pagenow").html(msg.pageno);
+                   }else {
+                   		$("#users").find("tr").remove();
+                  		for(var i=0;i<msg.users.length;i++){
+                  			var url=encodeURI("../res/scan.html?id="+msg.users[i].userid+"&name="+msg.users[i].username);
+                  			$("#users").append("<tr><td>"+msg.users[i].username+"</td><td>"+msg.users[i].loginname+"</td><td><button onclick='doReset("+msg.users[i].userid+")''>重置</button></td><td>"+msg.users[i].contact+"</td><td>"+msg.users[i].phone+"</td><td>"+msg.users[i].address+"</td><td><a href='"+url+"'><img class='scan' src='../images/scan.png'></a></td></tr>");
+                   			
+                   		}
+                      	$("#pagesum").html(msg.usersum);
+                      	$("#pageall").html(msg.pageall);
+                      	$("#pagenow").html(msg.pageno);
+                   }
+                },
+                error: function(data){
+                    alert("网络错误或未登陆,请重新登录");
+                }       
+           });
+           
+ //首页
+$("#firstbut").click(function(){
+	dosearch(1);
+});
+
+//上一页
+$("#upbut").click(function(){
+	var pagenow=$("#pagenow").html();
+	if(pagenow==1){
+		alert("已经是第一页了");
+	}else{
+		dosearch(Number(pagenow)-1);
+	}
+	
+});
+
+//下一页
+$("#downbut").click(function(){
+	var pagenow=$("#pagenow").html();
+	var pageall=$("#pageall").html();
+	if(pagenow==pageall){
+		alert("已经是最后一页了");
+	}else{
+		dosearch(Number(pagenow)+1);
+	}
+});
+
+//尾页
+$("#lastbut").click(function(){
+	var pageall=$("#pageall").html();
+	dosearch(Number(pageall));
+
+});
+
+ $("#addbutton").click(function(){
+ 
+       var username=$.trim($("#name1").val());
+       var loginname=$.trim($("#fnum1").val());
+       var password=$.trim($("#password").val());
+       var contact=$.trim($("#contact").val());
+       var phone=$.trim($("#phone").val());
+       var address=$.trim($("#address").val());
+      //验证通过后提交执行添加操作
+       if(checkall()){
+       	$.ajax({ 
+         type: "post", 
+                cache: false, 
+                dataType: 'json',
+                url: "AddUserByBus.ext",
+                data:{
+					username:username,
+					loginname:loginname,
+					password:password,
+					contact:contact,
+					phone:phone,
+					address:address
+                 },
+				success: function(msg) {
+                   if (msg.flag) {
+ 						alert("添加成功");
+ 						$(".delete").click();
+                   } else {
+                   		alert(msg.desc);
+                   }
+                },
+                error: function(data){
+                    alert("网络错误或未登陆,请重新登录");
+                }       
+           });
+       }else{
+       		//alert("请填写完整");
+       }
+       
+      
+       //验证value是否为空
+       function checkall(){
+       return checkone($("#name1"))&&checkone($("#fnum1"))&&checkone($("#password"))&&checkone($("#contact"))&&checkone($("#phone"))&&checkone($("#address"))&&checkthree();
+       }
+       //验证value是否为空
+       function checkone(one){
+       $(".err").hide();
+       	if($.trim(one.val())==""){
+       		one.after('<span class="err" style="color:red;font-size:10px;">该项不能为空</span>');
+       		return false;
+       	}
+       	return true;
+       }
+});
+
+
+});	
+function dosearch(pageno){
+$.ajax({ 
+         type: "post", 
+                cache: false, 
+                dataType: 'json',
+                url: "UserListByBus.ext",
+                data:{
+					pageno:pageno
+                 },
+				success: function(msg) {
+                   if (msg.usersum=='0') {
+                   		$("#users").find("tr").remove();
+                      	$("#users").append("<tr><td colspan='7'>没有查到数据</td></tr>");
+                      	$("#pagesum").html(msg.usersum);
+                      	$("#pageall").html(msg.pageall);
+                      	$("#pagenow").html(msg.pageno);
+                   }else {
+                   		$("#users").find("tr").remove();
+                  		for(var i=0;i<msg.users.length;i++){
+                  			var url=encodeURI("../res/scan.html?id="+msg.users[i].userid+"&name="+msg.users[i].username);
+                  			$("#users").append("<tr><td>"+msg.users[i].username+"</td><td>"+msg.users[i].loginname+"</td><td><button onclick='doReset("+msg.users[i].userid+")''>重置</button></td><td>"+msg.users[i].contact+"</td><td>"+msg.users[i].phone+"</td><td>"+msg.users[i].address+"</td><td><a href='"+url+"'><img class='scan' src='../images/scan.png'></a></td></tr>");
+                   			
+                   		}
+                      	$("#pagesum").html(msg.usersum);
+                      	$("#pageall").html(msg.pageall);
+                      	$("#pagenow").html(msg.pageno);
+                   }
+                },
+                error: function(data){
+                    alert("网络错误或未登陆,请重新登录");
+                }       
+           });
+}
+function doReset(userid){
+  if(confirm('确定要重置密码吗?')){
+  	$.ajax({ 
+        type: "post", 
+        cache: false, 
+        dataType: 'json',
+        url: "UpdateUserByBus.ext",
+        data:{
+			"userid":userid
+         },
+		success: function(msg) {
+        	alert(msg.desc);
+        },
+        error: function(data){
+        	alert("网络错误或未登陆,请重新登录");
+       	}       
+     });
+  
+  }
+	
+}
+
+
+</script>
+</html>

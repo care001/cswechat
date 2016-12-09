@@ -1,0 +1,22 @@
+package com.jc.entity;
+
+public class Power {
+	
+	private String url;
+	private String power;
+	public String getUrl() {
+		return url;
+	}
+	public void setUrl(String url) {
+		this.url = url;
+	}
+	public String getPower() {
+		return power;
+	}
+	public void setPower(String power) {
+		this.power = power;
+	}
+	
+	
+
+}

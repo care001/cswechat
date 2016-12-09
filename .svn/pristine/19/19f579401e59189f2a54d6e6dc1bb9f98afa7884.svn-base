@@ -1,0 +1,116 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"　"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>金诚集团无卡消费后台管理系统</title>
+<link href="css/admin.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="../js/jquery-1.9.1.min.js"></script>
+<style>
+
+.menu{height:100%;overflow-y: scroll;}
+body {background:#213246;}
+</style>
+
+
+</head>
+
+<body>
+<div class="mainLeft">
+  <div class="menu">
+     <h3><a href="javascript:void(0);">商户账号</a></h3>
+     <span id="content">
+		
+	 </span>
+	
+	<h2 id="userconf"><a href="addconsume.html" target="mainFrame">账号管理</a></h2>
+	
+  </div>
+</div>
+</body>
+<script type="text/javascript">
+
+
+$(document).ready(function(){	
+		var bh = document.body.clientHeight; 
+		$(".menu").css("height",bh);
+  $.ajax({ 
+                type: "post", 
+                cache: false, 
+                dataType: 'json',
+                url: "LeftBus.ext",
+                data:{
+					"merchantid":"info"
+                 },
+				success: function(msg){
+					if(msg.merchant!=null){
+						var name=msg.merchant.mername;
+						var merid=msg.merchant.merchantid;
+						var $a=$("<a onclick='show("+merid+")'>"+name+"</a>");
+						var $h2=$("<h2 onclick='addcss(this)'></h2>");
+						var $ul=$("<ul id="+merid+"></ul>");
+						$a.attr('href','consumingRecords_iframe.html');  
+						$a.attr('target','mainFrame');
+						$h2.append($a);
+						$("#content").append($h2); 
+						$("#content").append($ul);
+					}
+				},
+                error: function(data){
+                    alert("网络错误或未登陆,请重新登录");
+                }
+    });	
+	
+	$("#userconf").click(function(){
+		$(".current").removeClass("current");
+		$(".current2").removeClass("current2");
+		$(this).addClass("current");
+	});
+});
+function show(id){
+		if($("#"+id+" li").length>0){
+			$("#"+id).slideToggle("fast");
+		}else{
+		 $.ajax({ 
+				type: "post", 
+				cache: false, 
+				dataType: 'json',
+				url: "LeftBus.ext",
+				data:{
+				 },
+				success: function(msg){
+				   if (msg.users.length>0) {
+						for(var i=0;i<msg.users.length;i++){
+							var name=msg.users[i].username;
+		
+							var $aa=$("<a>"+name+"</a>");
+							$aa.attr('href','user_iframe.html?userid='+msg.users[i].userid);  
+							$aa.attr('target','mainFrame');
+							var $li=$("<li onclick='addcss2(this)'></li>");							
+							$li.append($aa);
+							$("#"+id).append($li);
+						}
+												
+					}else {
+							
+					}
+				},
+                error: function(data){
+                    alert("网络错误或未登陆,请重新登录");
+                }
+		});
+	}
+}
+	function addcss(a){
+			$(".current").removeClass("current");
+			$(".current2").removeClass("current2");  
+            $(a).addClass("current");      
+	}
+	function addcss2(a){
+			$(".current").removeClass("current");
+			$(".current2").removeClass("current2");  
+            $(a).addClass("current2");      
+	}
+	
+		
+</script> 
+</html>
