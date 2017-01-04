@@ -91,7 +91,7 @@ public class Testmain {
 		
 		System.out.println(Coder.formatTime(new Date()));
 		try {
-			System.out.println(Coder.EncoderByMd5("dengyj"));
+			System.out.println(Coder.EncoderByMd5("Gold2016"));
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
