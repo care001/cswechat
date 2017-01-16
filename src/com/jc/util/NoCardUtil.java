@@ -450,7 +450,71 @@ public class NoCardUtil {
 		session.close();
 		return cardId;
 	}
-	public static void main(String[] args) {
-		System.out.println(getUsableCardId("0001866"));
+	/*
+	 * ID消费**/
+	public static Map<String, Object> idRefund(String clientid,double amount,String business,String userid,int wallettype){
+		Map<String, Object> map=new HashMap<String, Object>();
+		Connection con=null;
+		CallableStatement ca=null;
+		SqlSession session = MyBatisUtil.getwkxfSession();
+		int conflag=-10;
+		try {
+			int cardId=getUsableCardId(clientid);
+			con=jdbcUtil.getConnection();
+			con.setAutoCommit(false);
+			ca =con.prepareCall("{? = call up_PosGetXF(?,?,?,?,?,?,?,?,?)}");
+			ca.registerOutParameter(1, Types.INTEGER);//返回 0成功 100重复数据
+    		ca.setInt(2,cardId);//卡流水号
+    		ca.setInt(3,wallettype);//钱包
+    		ca.setDouble(4,amount);//消费金额
+    		ca.setString(5,business);//商户名称（消费去向）
+    		ca.setInt(6,38);//操作员id
+    		ca.setString(7,userid);//电脑名称
+    		ca.setString(8,"weixin");//电脑用户名称
+    		ca.setInt(9,10);//消费方式 10-第三方
+    		ca.setInt(10,0);//IC钱包
+    		ca.execute();
+    		conflag=ca.getInt(1);
+			if(conflag==0){
+				con.commit();
+				map.put("conflag", 0);
+				map.put("desc", "退款成功");
+				logger.info("--------->"+clientid+"一卡通系统退款"+amount+"成功");
+			}else{
+				con.rollback();
+				if(conflag!=-10){
+					map.put("conflag", -1);
+					map.put("desc", "数据库修改失败, 返回:"+conflag);
+					logger.info("数据库修改失败，数据已回滚..返回标志："+conflag);
+				}
+			}
+		} catch (Exception e) {
+			try {
+				if (con!=null) {
+					con.rollback();
+				}
+				map.put("conflag", -1);
+				map.put("desc", "数据库修改出错");
+				logger.info("数据库修改出错，数据已回滚..");
+				return map;
+			} catch (SQLException e1) {
+				e1.printStackTrace();
+			}
+			e.printStackTrace();
+			
+		}finally{
+			session.close();
+			try {
+				if (ca!=null) {
+					ca.close();
+				}
+				jdbcUtil.free(con, null, null);
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+			
+		}
+		return map;
 	}
+	
 }

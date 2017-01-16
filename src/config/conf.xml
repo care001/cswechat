@@ -34,5 +34,6 @@
     <mapper resource="com/jc/dao/ConFailMapper.xml" />
     <mapper resource="com/jc/dao/AgencyMapper.xml" />
     <mapper resource="com/jc/dao/ConfigMapper.xml" />
+    <mapper resource="com/jc/dao/RefundMapper.xml" />
   </mappers>
 </configuration>

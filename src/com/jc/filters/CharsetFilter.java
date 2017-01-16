@@ -49,9 +49,10 @@ public class CharsetFilter implements Filter{
 	     request.setCharacterEncoding(config.getInitParameter("charset"));
 	     response.setContentType(config.getInitParameter("contentType"));
 	     response.setCharacterEncoding(config.getInitParameter("charset"));
-	    response.setHeader("Access-Control-Allow-Origin", "*");
-			String url = request.getRequestURL().toString();
-			if(offVerify(url)){
+	     response.setHeader("Access-Control-Allow-Origin", "*");
+	     response.setHeader("Access-Control-Request-Method", "GET, POST");
+	     String url = request.getRequestURL().toString();
+	     if(offVerify(url)){
 				int towhere=toWhere(url, request);
 				if(towhere==TOLOGIN){
 					goLogin(response,request.getContextPath() + "/admin/login.html");
@@ -63,7 +64,7 @@ public class CharsetFilter implements Filter{
 				
 			}else {
 				chain.doFilter(request, response);
-			}
+			}	
 	 }
 	
     @Override

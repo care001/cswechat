@@ -52,7 +52,7 @@
 		<!-- <table tableName="AGETNT_ACT_LOG" domainObjectName="AgetntActLog" />
 		<table tableName="CONFIG_INFO" domainObjectName="ConfigInfo" />
 		<table tableName="IMPART_GROUP_INFO" domainObjectName="ImpartGroupInfo" />-->
-		<table tableName="cs_consume" domainObjectName="Consume" />	
+		<table tableName="cs_refund" domainObjectName="Refund" />	
 
 	</context>
 	

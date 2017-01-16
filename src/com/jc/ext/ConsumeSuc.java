@@ -59,7 +59,8 @@ public class ConsumeSuc extends HttpServlet{
           // 跳转到index.jsp
           /*request.setAttribute("money", money);
           request.getRequestDispatcher("jsp/receiveMoney.jsp").forward(request, response);*/
-          response.sendRedirect("jsp/receiveMoney.jsp?money="+money);
+          //重定向
+          //response.sendRedirect("jsp/receiveMoney.jsp?money="+money);
         }
     	public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {    
     		doGet(request, response); 

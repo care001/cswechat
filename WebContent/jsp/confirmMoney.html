@@ -61,15 +61,9 @@
 <script src="js/jquery.validate.js"></script>
 <script src="js/keyboard.js"></script>
 <script type="text/javascript">
+var scanOk = 0;
 $(function() {
-
-
-
-
 $("#number").val("");
-
-
-
 $("#dialog").hide();
 $("#diaclose").click(function(){
 	$("#dialog").hide();
@@ -78,7 +72,6 @@ $("#dialog2").hide();
 $("#diaclose2").click(function(){
 	$("#dialog2").hide();
 });
-
 
 $.ajax({ 
        type: "post", 
@@ -135,9 +128,11 @@ document.body.appendChild(temp);
     wx.scanQRCode({
       needResult: 1,
       success: function (res) {
-        var client = res.resultStr;
-       	$.ajax({ 
-         type: "post", 
+      	var client = res.resultStr;
+      	scanOk = scanOk + 1;
+      	if(scanOk<=1){
+      		$.ajax({ 
+        		type: "post", 
                 cache: false, 
                 dataType: 'json',
                 url: "../DoConsume.ext",
@@ -149,14 +144,17 @@ document.body.appendChild(temp);
 				success: function(msg) {
 					if(msg.flag==true){
                    		post('https://open.weixin.qq.com/connect/oauth2/authorize?appid=wx19f885b88db57ae4&redirect_uri=http%3A%2F%2Fwxqj.gold-finance.com.cn%2FConsumeSuc.ext&response_type=code&scope=snsapi_base&state=buss;'+msg.paytime+';'+msg.clientid+';'+msg.money+'#wechat_redirect', {}); 
+                   		window.location.href = 'receiveMoney.jsp?money='+msg.money;
                    	}else{
                    		$("#dialogmsg").html(msg.desc);
                    		$("#dialog").show();
-                   		//alert(msg.desc);
+                   		scanOk = 0;
                    	}
   		          }       
            });
-        
+      	}else{
+      		alert("请重新打开页面进行收款");
+      	}
       }
     }); 
   };

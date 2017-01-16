@@ -96,7 +96,7 @@ public class Testmain {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}  
-		String emp="0";
+		String emp="0002621";
 		//System.out.println(NoCardUtil.getICBalance("0001355"));
  		System.out.println("充值前余额："+PosMoney(emp,7));
  		//System.out.println(PosPutXF(emp,5000));
